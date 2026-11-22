@@ -271,8 +271,16 @@ function setupIpcHandlers() {
     }
 
     try {
-      const rawChannels = await TwitchService.getModeratedChannels(sessionData.token, sessionData.userId);
-      const enrichedChannels = await TwitchService.enrichChannelsData(sessionData.token, rawChannels);
+      const moderated = await TwitchService.getModeratedChannels(sessionData.token, sessionData.userId);
+      // Sa propre chaîne en premier (Twitch ne la compte pas parmi les chaînes modérées)
+      const ownChannel = {
+        broadcaster_id: sessionData.userId,
+        broadcaster_login: sessionData.login,
+        broadcaster_name: sessionData.login
+      };
+      const rawChannels = [ownChannel, ...moderated.filter(c => c.broadcaster_id !== sessionData.userId)];
+      const enrichedChannels = (await TwitchService.enrichChannelsData(sessionData.token, rawChannels))
+        .map(c => ({ ...c, isOwn: c.id === sessionData.userId }));
 
       return {
         success: true,

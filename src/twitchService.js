@@ -194,7 +194,7 @@ class TwitchService {
       return {
         id: channel.broadcaster_id,
         login: channel.broadcaster_login,
-        name: channel.broadcaster_name,
+        name: user?.display_name || channel.broadcaster_name,
         profileImageUrl: user?.profile_image_url || '',
         description: user?.description || '',
         isLive: Boolean(stream),

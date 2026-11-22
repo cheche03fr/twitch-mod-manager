@@ -1585,6 +1585,16 @@ button {
   gap: 8px;
 }
 
+.own-channel-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--twitch-purple);
+}
+
 /* Le panneau se déplace en le prenant par son en-tête */
 .widget-header {
   cursor: grab;

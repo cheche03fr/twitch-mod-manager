@@ -895,7 +895,7 @@ function createChannelCard(channel) {
           ${channel.isLive ? '🔴 EN DIRECT' : 'Hors ligne'}
         </span>
       </div>
-      <div class="channel-login">@${escapeHtml(channel.login)}</div>
+      <div class="channel-login">@${escapeHtml(channel.login)}${channel.isOwn ? ' <span class="own-channel-tag">Ma chaîne</span>' : ''}</div>
     </div>
   `;
 

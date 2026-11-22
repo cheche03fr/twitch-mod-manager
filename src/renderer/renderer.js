@@ -128,6 +128,7 @@ const dom = {
 
   // Édition
   editorRoleBadge: document.getElementById('editor-role-badge'),
+  editorRightPill: document.getElementById('right-pill-editor'),
   btnRefreshChannelInfo: document.getElementById('btn-refresh-channel-info'),
   editStreamTitle: document.getElementById('edit-stream-title'),
   titleCharCount: document.getElementById('title-char-count'),
@@ -1343,9 +1344,15 @@ async function loadEditorStatusAndInfo(channel) {
     state.isEditor = Boolean(res.isEditor);
     showRight('editor', state.isEditor);
 
+    // Chaîne sans VOD : Twitch ne permet pas de vérifier, le panneau reste affiché avec un avertissement
+    const unknown = res.editorStatus === 'unknown';
+    dom.editorRightPill.textContent = unknown ? '✏️ Éditeur : non vérifiable' : '✏️ Éditeur : ✅';
+    dom.editorRightPill.className = `right-pill ${unknown ? 'inactive' : 'active'}`;
+
     if (state.isEditor) {
-      dom.editorRoleBadge.className = 'editor-badge active';
-      dom.editorRoleBadge.innerText = 'Éditeur ✅';
+      dom.editorRoleBadge.className = `editor-badge ${unknown ? 'inactive' : 'active'}`;
+      dom.editorRoleBadge.innerText = unknown ? 'Non vérifiable (aucune VOD)' : 'Éditeur ✅';
+      dom.editorRoleBadge.title = unknown ? 'Twitch ne peut confirmer le rôle éditeur que si la chaîne a au moins une VOD.' : '';
       dom.btnSaveChannelInfo.disabled = false;
       dom.commercialButtons.forEach(b => b.disabled = false);
     } else {

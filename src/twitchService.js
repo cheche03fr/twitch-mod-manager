@@ -1,6 +1,16 @@
 ﻿const { CLIENT_ID } = require('./config');
 
 /**
+ * Statut éditeur d'après GET /streams/markers (vérifié sur de vraies chaînes) :
+ * 200 = éditeur, 401/403 = pas éditeur, 404 = chaîne sans VOD, Twitch répond avant de vérifier les droits.
+ */
+function editorStatusFromMarkersResponse(status) {
+  if (status === 200) return 'yes';
+  if (status === 401 || status === 403) return 'no';
+  return 'unknown';
+}
+
+/**
  * Service pour interagir avec l'API Twitch Helix
  */
 class TwitchService {
@@ -587,51 +597,45 @@ class TwitchService {
   static async checkEditorRights(token, broadcasterId, userId) {
     const result = {
       isEditor: false,
-      channelInfo: null,
-      scopes: []
+      editorStatus: 'no', // 'yes' | 'no' | 'unknown'
+      channelInfo: null
     };
-
-    try {
-      const validation = await this.validateToken(token);
-      result.scopes = validation.scopes || [];
-    } catch (e) {
-      // Ignorer
-    }
 
     try {
       result.channelInfo = await this.getChannelInfo(token, broadcasterId);
     } catch (e) {
-      // Ignorer
+      console.warn('Infos de chaîne indisponibles:', e.message);
     }
 
-    // Si l'utilisateur est le diffuseur lui-même, il est éditeur
+    // Le diffuseur est toujours éditeur de sa propre chaîne
     if (String(broadcasterId) === String(userId)) {
       result.isEditor = true;
+      result.editorStatus = 'yes';
       return result;
     }
 
-    // Vérifier la liste des éditeurs Twitch
+    result.editorStatus = editorStatusFromMarkersResponse(await this.probeStreamMarkers(token, broadcasterId));
+    result.isEditor = result.editorStatus !== 'no';
+    return result;
+  }
+
+  /**
+   * La liste des éditeurs n'est lisible que par le diffuseur : on lit à la place les marqueurs
+   * (réservés au diffuseur et à ses éditeurs). Renvoie le code HTTP, ou null si Twitch est injoignable.
+   */
+  static async probeStreamMarkers(token, broadcasterId) {
     try {
-      const response = await fetch(`https://api.twitch.tv/helix/channels/editors?broadcaster_id=${broadcasterId}`, {
+      const response = await fetch(`https://api.twitch.tv/helix/streams/markers?user_id=${broadcasterId}&first=1`, {
         headers: {
           'Client-Id': CLIENT_ID,
           'Authorization': `Bearer ${token}`
         }
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const isListed = (data.data || []).some(e => String(e.user_id) === String(userId));
-        result.isEditor = isListed;
-      } else {
-        // Si l'endpoint renvoie 403 (autorisé uniquement au diffuseur), tester le scope
-        result.isEditor = result.scopes.includes('channel:manage:broadcast');
-      }
+      return response.status;
     } catch (err) {
-      result.isEditor = result.scopes.includes('channel:manage:broadcast');
+      console.warn('Vérification éditeur impossible:', err.message);
+      return null;
     }
-
-    return result;
   }
 
   /**
@@ -705,3 +709,4 @@ class TwitchService {
 }
 
 module.exports = TwitchService;
+module.exports.editorStatusFromMarkersResponse = editorStatusFromMarkersResponse;

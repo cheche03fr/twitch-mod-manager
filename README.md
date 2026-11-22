@@ -43,6 +43,8 @@ L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n
 ### Rôle éditeur de chaîne
 Panneau affiché seulement si vous êtes éditeur de la chaîne : modifier le **titre**, le **jeu**, les **tags**, lancer une **coupure publicitaire** et créer un **marqueur** de stream.
 
+Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a encore **aucune VOD**, Twitch ne permet pas de le confirmer : le panneau reste affiché avec la mention **Non vérifiable**.
+
 ### Prédictions
 Panneau affiché seulement sur **votre propre chaîne** (l'API Twitch réserve les prédictions au propriétaire) : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique. Sur la chaîne d'un autre streamer, utilisez l'onglet **Vue Twitch officielle**.
 

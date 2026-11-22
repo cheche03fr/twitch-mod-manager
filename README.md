@@ -17,6 +17,9 @@ Au démarrage, l'application vérifie s'il existe une nouvelle version et la té
 
 La version installée et sa date sont affichées dans le pied de page, toujours visible en bas de la fenêtre.
 
+### Versions bêta
+Par défaut, vous ne recevez que les versions normales. Pour tester les nouveautés en avant-première, cochez **Recevoir les versions bêta** dans les ⚙️ Paramètres : les versions bêta (par exemple `1.0.15-beta.1`) vous seront alors proposées. Décocher la case ne revient pas en arrière : vous repasserez sur la prochaine version normale.
+
 ---
 
 ## 🚀 Fonctionnalités
@@ -55,6 +58,8 @@ Bouton **⚙️** en haut à droite :
 - **Actualisation automatique des chaînes** : une case à cocher pour l'activer ou la désactiver, et un curseur pour choisir l'intervalle, de **30 à 120 secondes** par pas de 15 (30 s par défaut).
 - **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
 
+- **Recevoir les versions bêta** : voir [Versions bêta](#versions-bêta).
+
 Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 ---
@@ -77,6 +82,8 @@ npm test
 ```
 
 Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile, signe l'installeur et crée la release ; les applications installées se mettent à jour automatiquement.
+
+Publier une bêta : `git tag v1.2.3-beta.1; git push origin v1.2.3-beta.1`. La release est marquée « pré-version » et n'est proposée qu'aux applications où la case bêta est cochée.
 
 ---
 

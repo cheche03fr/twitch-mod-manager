@@ -39,13 +39,19 @@ jobs:
           name: twitch-mod-manager-setup
           path: dist/*.exe
 
-      # Tag v* : publie installeur + latest.yml dans les Releases de ce dépôt (source des mises à jour auto)
+      # Tag v* : publie installeur + fichier de mise à jour dans les Releases de ce dépôt (source des mises à jour auto)
+      # Tag v1.2.3-beta.1 : pré-version, ignorée par les apps sans « Recevoir les versions bêta »
+      # (elles ne lisent que la dernière release normale)
       - if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create "$GITHUB_REF_NAME"
-          dist/Twitch-Mod-Manager-Setup-*.exe dist/*.blockmap dist/latest.yml
-          --title "Twitch Mod Manager $GITHUB_REF_NAME"
-          --notes "Installeur Windows. Les versions déjà installées se mettent à jour automatiquement."
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            extra=(--prerelease --notes "Version bêta : proposée seulement si « Recevoir les versions bêta » est coché dans les Paramètres.")
+          else
+            extra=(--notes "Installeur Windows. Les versions déjà installées se mettent à jour automatiquement.")
+          fi
+          gh release create "$GITHUB_REF_NAME" \
+            dist/Twitch-Mod-Manager-Setup-*.exe dist/*.blockmap dist/latest.yml \
+            --title "Twitch Mod Manager $GITHUB_REF_NAME" "${extra[@]}"

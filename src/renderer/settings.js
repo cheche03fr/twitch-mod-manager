@@ -4,7 +4,7 @@ const REFRESH_MIN = 30;
 const REFRESH_MAX = 120;
 const REFRESH_STEP = 15; // mêmes bornes que le curseur de index.html
 const THEMES = ['dark', 'light'];
-const DEFAULT_SETTINGS = Object.freeze({ autoRefresh: true, refreshSeconds: 30, theme: 'dark' });
+const DEFAULT_SETTINGS = Object.freeze({ autoRefresh: true, refreshSeconds: 30, theme: 'dark', betaUpdates: false });
 
 function isValidRefresh(seconds) {
   return Number.isInteger(seconds) && seconds >= REFRESH_MIN && seconds <= REFRESH_MAX
@@ -23,7 +23,8 @@ function parseSettings(raw) {
   return {
     autoRefresh: typeof saved.autoRefresh === 'boolean' ? saved.autoRefresh : !legacyDisabled,
     refreshSeconds: isValidRefresh(saved.refreshSeconds) ? saved.refreshSeconds : DEFAULT_SETTINGS.refreshSeconds,
-    theme: THEMES.includes(saved.theme) ? saved.theme : DEFAULT_SETTINGS.theme
+    theme: THEMES.includes(saved.theme) ? saved.theme : DEFAULT_SETTINGS.theme,
+    betaUpdates: saved.betaUpdates === true
   };
 }
 

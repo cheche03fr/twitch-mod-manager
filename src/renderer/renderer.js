@@ -1608,6 +1608,16 @@ function setupSettings() {
       applyTheme(state.settings.theme);
     });
   });
+
+  const betaCheckbox = document.getElementById('setting-beta-updates');
+  betaCheckbox.checked = state.settings.betaUpdates;
+  betaCheckbox.addEventListener('change', (e) => {
+    updateSettings({ betaUpdates: e.target.checked });
+    window.electronAPI.checkForUpdates(state.settings.betaUpdates);
+  });
+
+  // Recherche de mise à jour au démarrage, sur la voie choisie (bêta ou normale)
+  window.electronAPI.checkForUpdates(state.settings.betaUpdates);
 }
 
 function stopAutoRefresh() {

@@ -121,8 +121,7 @@ if (!singleInstanceLock) {
   app.whenReady().then(async () => {
     setupIpcHandlers();
     await createWindow();
-
-    if (app.isPackaged) setupAutoUpdate();
+    // La recherche de mise à jour est lancée par la page (app:check-updates), qui connaît le choix bêta
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) await createWindow();
@@ -131,28 +130,37 @@ if (!singleInstanceLock) {
 }
 
 /**
- * Mise à jour depuis cheche03fr/twitch-mod-manager-releases :
+ * Mise à jour depuis les Releases de cheche03fr/twitch-mod-manager :
  * téléchargement en fond, puis une fenêtre demande si on installe.
+ * beta = true : les pré-versions (tags v1.2.3-beta.1) sont aussi proposées.
  */
-function setupAutoUpdate() {
-  const { autoUpdater } = require('electron-updater');
-  autoUpdater.autoInstallOnAppQuit = false; // n'installe jamais sans accord
+let autoUpdater = null;
+let promptedVersion = null;
 
-  autoUpdater.on('update-downloaded', async (info) => {
-    const { response } = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Mise à jour disponible',
-      message: `La version ${info.version} de Twitch Mod Manager est disponible.`,
-      detail: `Version actuelle : ${app.getVersion()}\n\nVoulez-vous l'installer maintenant ? L'application va redémarrer.`,
-      buttons: ['Installer maintenant', 'Plus tard'],
-      defaultId: 0,
-      cancelId: 1
-    });
-    if (response === 0) autoUpdater.quitAndInstall();
-  });
-
-  autoUpdater.on('error', err => console.error('Mise à jour impossible:', err.message));
+function checkForUpdates(beta) {
+  if (!autoUpdater) {
+    autoUpdater = require('electron-updater').autoUpdater;
+    autoUpdater.autoInstallOnAppQuit = false; // n'installe jamais sans accord
+    autoUpdater.on('update-downloaded', promptInstall);
+    autoUpdater.on('error', err => console.error('Mise à jour impossible:', err.message));
+  }
+  autoUpdater.allowPrerelease = beta;
   autoUpdater.checkForUpdates().catch(err => console.error('Mise à jour impossible:', err.message));
+}
+
+async function promptInstall(info) {
+  if (promptedVersion === info.version) return; // déjà proposée (nouvelle recherche après changement du choix bêta)
+  promptedVersion = info.version;
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Mise à jour disponible',
+    message: `La version ${info.version} de Twitch Mod Manager est disponible.`,
+    detail: `Version actuelle : ${app.getVersion()}\n\nVoulez-vous l'installer maintenant ? L'application va redémarrer.`,
+    buttons: ['Installer maintenant', 'Plus tard'],
+    defaultId: 0,
+    cancelId: 1
+  });
+  if (response === 0) autoUpdater.quitAndInstall();
 }
 
 app.on('window-all-closed', () => {
@@ -531,6 +539,13 @@ function setupIpcHandlers() {
       return { success: false, error: err.message };
     }
   });
+  // Recherche de mise à jour, voie bêta ou normale (rien en développement)
+  ipcMain.handle('app:check-updates', async (event, beta) => {
+    if (!app.isPackaged) return { success: false, error: 'version de développement' };
+    checkForUpdates(beta === true);
+    return { success: true };
+  });
+
   // Infos de l'application (pied de page)
   ipcMain.handle('app:get-info', async () => {
     let buildDate = null;

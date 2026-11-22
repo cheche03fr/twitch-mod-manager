@@ -34,14 +34,22 @@
     "win": {
       "icon": "assets/icon.png",
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ]
     },
     "copyright": "Copyright (c) 2026 cheche03fr. Tous droits réservés.",
+    "publish": {
+      "provider": "github",
+      "owner": "cheche03fr",
+      "repo": "twitch-mod-manager-releases",
+      "releaseType": "release"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }

@@ -79,6 +79,12 @@ if (!singleInstanceLock) {
     setupIpcHandlers();
     await createWindow();
 
+    // Mise à jour auto depuis cheche03fr/twitch-mod-manager-releases : télécharge en fond, installe à la fermeture
+    if (app.isPackaged) {
+      const { autoUpdater } = require('electron-updater');
+      autoUpdater.checkForUpdatesAndNotify().catch(err => console.error('Mise à jour impossible:', err.message));
+    }
+
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) await createWindow();
     });

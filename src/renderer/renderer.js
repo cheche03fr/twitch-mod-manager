@@ -1491,9 +1491,21 @@ async function loadPredictions(broadcasterId) {
   const isOwnChannel = String(broadcasterId) === String(state.currentUser?.id);
   const btnNew = document.getElementById('btn-new-prediction');
   if (btnNew) btnNew.style.display = isOwnChannel ? '' : 'none';
+  const historyBlock = document.getElementById('predictions-history');
+  if (historyBlock) historyBlock.style.display = isOwnChannel ? '' : 'none';
   if (!isOwnChannel) {
-    statusEl.textContent = "Twitch n'autorise la gestion des predictions que par le streamer, sur sa propre chaine. Utilise le Dashboard Twitch de la chaine pour les predictions.";
-    if (historyList) historyList.innerHTML = '';
+    // Les mods gerent les predictions via la Mod View Twitch (si le streamer l'a autorise)
+    const login = state.currentChannel?.login;
+    statusEl.innerHTML = '';
+    const info = document.createElement('div');
+    info.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:8px;';
+    info.textContent = "L'API Twitch réserve les prédictions au streamer. En tant que modérateur, gère-les depuis la Mod View de Twitch (si le streamer l'a autorisé).";
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary btn-sm';
+    btn.textContent = '🔮 Ouvrir les prédictions sur Twitch';
+    btn.disabled = !login;
+    btn.onclick = () => window.electronAPI.openExternal(`https://www.twitch.tv/moderator/${login}`);
+    statusEl.append(info, btn);
     return;
   }
 

@@ -42,7 +42,7 @@
     "publish": {
       "provider": "github",
       "owner": "cheche03fr",
-      "repo": "twitch-mod-manager-releases",
+      "repo": "twitch-mod-manager",
       "releaseType": "release"
     },
     "nsis": {

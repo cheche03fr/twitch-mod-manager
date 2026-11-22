@@ -6,6 +6,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: write # créer les releases dans ce dépôt
+
 jobs:
   build:
     runs-on: windows-latest
@@ -32,14 +35,13 @@ jobs:
           name: twitch-mod-manager-setup
           path: dist/*.exe
 
-      # Tag v* : publie installeur + latest.yml dans le dépôt public (source des mises à jour auto)
+      # Tag v* : publie installeur + latest.yml dans les Releases de ce dépôt (source des mises à jour auto)
       - if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "$GITHUB_REF_NAME"
           dist/Twitch-Mod-Manager-Setup-*.exe dist/*.blockmap dist/latest.yml
-          --repo cheche03fr/twitch-mod-manager-releases
           --title "Twitch Mod Manager $GITHUB_REF_NAME"
           --notes "Installeur Windows. Les versions déjà installées se mettent à jour automatiquement."

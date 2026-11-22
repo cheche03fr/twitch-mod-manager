@@ -811,6 +811,11 @@ button {
   display: none !important;
 }
 
+/* Fonction non autorisée sur la chaîne ouverte (classe séparée : ne touche pas à l'agencement enregistré) */
+.no-right {
+  display: none !important;
+}
+
 /* ========================================================
    ESPACE DE MODÉRATION DIRECTE (MOD SCREEN)
    ======================================================== */

@@ -961,6 +961,9 @@ async function openModerationScreen(channel) {
 
   addModActionLog(`Connecté à la chaîne @${channel.login}. Espace modérateur prêt.`, 'system');
 
+  // Tout ce qui demande un droit reste masqué tant que le droit n'est pas confirmé
+  ALL_RIGHTS.forEach(right => showRight(right, false));
+
   // Chargement des droits et infos
   loadChannelRights(channel);
   loadEditorStatusAndInfo(channel);
@@ -1043,10 +1046,31 @@ async function loadChannelRights(channel) {
 
       updateRightPill(dom.rightPillShield, rights.canManageShieldMode, '🛡️ Bouclier');
       adaptShieldButton(rights.canManageShieldMode, rights.shieldMode);
+
+      showRight('bans', rights.canManageBans);
+      showRight('chat', rights.canManageChatSettings);
+      showRight('chatters', rights.canReadChatters);
+      showRight('shield', rights.canManageShieldMode);
     }
   } catch (err) {
     console.error('Erreur droits:', err);
   }
+}
+
+const ALL_RIGHTS = ['bans', 'chat', 'shield', 'chatters', 'editor', 'predictions'];
+
+/**
+ * Affiche ou masque tous les éléments marqués data-right="<right>".
+ * Le panneau Actions rapides disparaît s'il ne lui reste aucune action autorisée.
+ */
+function showRight(right, allowed) {
+  document.querySelectorAll(`[data-right="${right}"]`)
+    .forEach(el => el.classList.toggle('no-right', !allowed));
+  const quickMod = document.getElementById('widget-quick-mod');
+  const quickModAllowed = Boolean(quickMod.querySelector('[data-right]:not(.no-right)'));
+  quickMod.classList.toggle('no-right', !quickModAllowed);
+  dom.widgetsDropdown.querySelector('[data-widget="widget-quick-mod"]')
+    .closest('label').classList.toggle('no-right', !quickModAllowed);
 }
 
 function updateRightPill(pill, isAllowed, label) {
@@ -1259,6 +1283,7 @@ async function loadEditorStatusAndInfo(channel) {
   try {
     const res = await window.electronAPI.checkEditorRights(channel.id);
     state.isEditor = Boolean(res.isEditor);
+    showRight('editor', state.isEditor);
 
     if (state.isEditor) {
       dom.editorRoleBadge.className = 'editor-badge active';
@@ -1548,25 +1573,8 @@ async function loadPredictions(broadcasterId) {
 
   // L'API Twitch n'autorise les predictions que sur la chaine du compte connecte (pas pour les mods/editeurs)
   const isOwnChannel = String(broadcasterId) === String(state.currentUser?.id);
-  const btnNew = document.getElementById('btn-new-prediction');
-  if (btnNew) btnNew.style.display = isOwnChannel ? '' : 'none';
-  const historyBlock = document.getElementById('predictions-history');
-  if (historyBlock) historyBlock.style.display = isOwnChannel ? '' : 'none';
-  if (!isOwnChannel) {
-    // Les mods gerent les predictions via la Mod View Twitch (si le streamer l'a autorise)
-    const login = state.currentChannel?.login;
-    statusEl.innerHTML = '';
-    const info = document.createElement('div');
-    info.style.cssText = 'font-size:12px;color:var(--text-muted);margin-bottom:8px;';
-    info.textContent = "L'API Twitch réserve les prédictions au streamer. En tant que modérateur, gère-les depuis la Mod View de Twitch (si le streamer l'a autorisé).";
-    const btn = document.createElement('button');
-    btn.className = 'btn-primary btn-sm';
-    btn.textContent = '🔮 Ouvrir les prédictions sur Twitch';
-    btn.disabled = !login;
-    btn.onclick = () => window.electronAPI.openExternal(`https://www.twitch.tv/moderator/${login}`);
-    statusEl.append(info, btn);
-    return;
-  }
+  showRight('predictions', isOwnChannel);
+  if (!isOwnChannel) return;
 
   statusEl.textContent = 'Chargement des predictions...';
 

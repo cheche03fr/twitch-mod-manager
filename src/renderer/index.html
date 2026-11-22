@@ -197,10 +197,10 @@
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-quick-mod" checked> ⚡ Actions Rapides</label>
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-actions-log" checked> 📋 Actions de Modérateur</label>
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-automod" checked> 🤖 File d'attente AutoMod</label>
-            <label class="dropdown-item"><input type="checkbox" data-widget="widget-chatters" checked> 👥 Chatters & Communauté</label>
-            <label class="dropdown-item"><input type="checkbox" data-widget="widget-stream-editor" checked> ✏️ Édition du Stream</label>
+            <label class="dropdown-item" data-right="chatters"><input type="checkbox" data-widget="widget-chatters" checked> 👥 Chatters & Communauté</label>
+            <label class="dropdown-item" data-right="editor"><input type="checkbox" data-widget="widget-stream-editor" checked> ✏️ Édition du Stream</label>
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-activity" checked> 📊 Détails & Uptime</label>
-            <label class="dropdown-item"><input type="checkbox" data-widget="widget-predictions" checked> Predictions</label>
+            <label class="dropdown-item" data-right="predictions"><input type="checkbox" data-widget="widget-predictions" checked> 🔮 Prédictions</label>
           </div>
         </div>
 
@@ -325,7 +325,7 @@
 
         
 <!-- 9. WIDGET : PREDICTIONS -->
-        <div class="grid-widget col-span-6" id="widget-predictions" draggable="true" data-widget-id="widget-predictions">
+        <div class="grid-widget col-span-6" id="widget-predictions" data-right="predictions" draggable="true" data-widget-id="widget-predictions">
           <div class="widget-header">
             <div class="widget-title">
               <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
@@ -381,7 +381,7 @@
         </div>
 
         <!-- 5. WIDGET : SPECTATEURS & CHATTERS (COMMUNAUTÉ) -->
-        <div class="grid-widget col-span-4" id="widget-chatters" draggable="true" data-widget-id="widget-chatters">
+        <div class="grid-widget col-span-4" id="widget-chatters" data-right="chatters" draggable="true" data-widget-id="widget-chatters">
           <div class="widget-header">
             <div class="widget-title">
               <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
@@ -420,14 +420,14 @@
           </div>
           <div class="widget-body">
             <!-- Sanction / Timeout -->
-            <div class="mod-form-group">
+            <div class="mod-form-group" data-right="bans">
               <div class="target-row">
                 <input type="text" id="ban-user-input" placeholder="Pseudo à sanctionner (@user)..." autocomplete="off">
                 <button id="btn-apply-sanction" class="btn-primary btn-sm">Appliquer</button>
               </div>
             </div>
 
-            <div class="duration-presets" id="duration-presets">
+            <div class="duration-presets" id="duration-presets" data-right="bans">
               <button type="button" class="preset-btn active" data-duration="1">1s (Purge)</button>
               <button type="button" class="preset-btn" data-duration="60">1 min</button>
               <button type="button" class="preset-btn" data-duration="600">10 min</button>
@@ -436,13 +436,13 @@
               <button type="button" class="preset-btn btn-danger-text" data-duration="0">Ban permanent</button>
             </div>
 
-            <div class="mod-form-group mt-6">
+            <div class="mod-form-group mt-6" data-right="bans">
               <input type="text" id="ban-reason-input" class="input-sm" placeholder="Motif de la sanction...">
             </div>
-            <div id="ban-feedback" class="action-feedback"></div>
+            <div id="ban-feedback" class="action-feedback" data-right="bans"></div>
 
             <!-- Toggles de modes de chat -->
-            <div class="chat-toggles-grid mt-10">
+            <div class="chat-toggles-grid mt-10" data-right="chat">
               <label class="toggle-card">
                 <input type="checkbox" id="toggle-slow-mode">
                 <div class="toggle-content">
@@ -477,10 +477,10 @@
             </div>
 
             <div class="quick-buttons-row mt-10">
-              <button id="btn-clear-chat" class="btn-secondary btn-danger-outline btn-sm">
+              <button id="btn-clear-chat" class="btn-secondary btn-danger-outline btn-sm" data-right="chat">
                 🗑️ Purger le chat
               </button>
-              <button id="btn-toggle-shield" class="btn-secondary btn-sm">
+              <button id="btn-toggle-shield" class="btn-secondary btn-sm" data-right="shield">
                 🛡️ Mode Bouclier
               </button>
             </div>
@@ -488,7 +488,7 @@
         </div>
 
         <!-- 7. WIDGET : ÉDITION DU STREAM (RÔLE ÉDITEUR) -->
-        <div class="grid-widget col-span-6" id="widget-stream-editor" draggable="true" data-widget-id="widget-stream-editor">
+        <div class="grid-widget col-span-6" id="widget-stream-editor" data-right="editor" draggable="true" data-widget-id="widget-stream-editor">
           <div class="widget-header">
             <div class="widget-title">
               <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
@@ -602,10 +602,11 @@
             <div class="rights-overview-strip mt-10">
               <span class="strip-label">Droits actifs sur cette chaîne :</span>
               <div id="mod-rights-summary" class="mod-rights-badges">
-                <span class="right-pill" id="right-pill-bans">🔨 Exclusions</span>
-                <span class="right-pill" id="right-pill-chat">💬 Chat</span>
-                <span class="right-pill" id="right-pill-chatters">👥 Chatters</span>
-                <span class="right-pill" id="right-pill-shield">🛡️ Bouclier</span>
+                <span class="right-pill" id="right-pill-bans" data-right="bans">🔨 Exclusions</span>
+                <span class="right-pill" id="right-pill-chat" data-right="chat">💬 Chat</span>
+                <span class="right-pill" id="right-pill-chatters" data-right="chatters">👥 Chatters</span>
+                <span class="right-pill" id="right-pill-shield" data-right="shield">🛡️ Bouclier</span>
+                <span class="right-pill active" data-right="editor">✏️ Éditeur : ✅</span>
               </div>
             </div>
           </div>

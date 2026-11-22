@@ -29,6 +29,8 @@ La version installée et sa date sont affichées en bas de la fenêtre.
 - Trois boutons sur chaque carte : **Gérer** (écran de modération), **Stream** (ouvre le live sur Twitch) et **Chat** (ouvre le chat dans une fenêtre détachée).
 
 ### Écran de modération
+L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n'avez pas le droit d'utiliser n'est pas affichée (ni son panneau, ni son entrée dans le menu ＋ Panneaux).
+
 - **Stream et chat intégrés** côte à côte.
 - **Sanctions** : timeout ou ban d'un pseudo, avec motif.
 - **Purge du chat** et **mode bouclier**.
@@ -38,11 +40,10 @@ La version installée et sa date sont affichées en bas de la fenêtre.
 - Onglet **Vue Twitch officielle** : la Mod View de Twitch directement dans l'application.
 
 ### Rôle éditeur de chaîne
-Si vous êtes aussi éditeur de la chaîne : modifier le **titre**, le **jeu**, les **tags**, lancer une **coupure publicitaire** et créer un **marqueur** de stream.
+Panneau affiché seulement si vous êtes éditeur de la chaîne : modifier le **titre**, le **jeu**, les **tags**, lancer une **coupure publicitaire** et créer un **marqueur** de stream.
 
 ### Prédictions
-- Sur **votre propre chaîne** : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique.
-- Sur la chaîne d'un **autre streamer** : l'API Twitch réserve les prédictions au propriétaire de la chaîne. L'application propose alors un bouton qui ouvre les prédictions dans la Mod View de Twitch.
+Panneau affiché seulement sur **votre propre chaîne** (l'API Twitch réserve les prédictions au propriétaire) : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique. Sur la chaîne d'un autre streamer, utilisez l'onglet **Vue Twitch officielle**.
 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite :

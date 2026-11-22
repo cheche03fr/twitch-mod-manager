@@ -26,7 +26,7 @@ La version installée et sa date sont affichées en bas de la fenêtre.
 - **Statut en direct** : titre du live, jeu, nombre de spectateurs et avatar du streamer.
 - **Recherche** par chaîne ou par jeu, **filtres** *Toutes / En direct / Hors ligne*, **tri** *En direct d'abord / Spectateurs / Nom (A-Z, Z-A)*.
 - **Actualisation automatique** des statuts (intervalle réglable dans les Paramètres).
-- Boutons rapides : **Gérer** (écran de modération), **Stream** et **Chat** (*popout*) sur Twitch.
+- Trois boutons sur chaque carte : **Gérer** (écran de modération), **Stream** (ouvre le live sur Twitch) et **Chat** (ouvre le chat dans une fenêtre détachée).
 
 ### Écran de modération
 - **Stream et chat intégrés** côte à côte.
@@ -46,7 +46,7 @@ Si vous êtes aussi éditeur de la chaîne : modifier le **titre**, le **jeu**, 
 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite :
-- **Actualisation automatique des chaînes** : toutes les **30 secondes** (par défaut), toutes les **120 secondes**, ou **désactivée**.
+- **Actualisation automatique des chaînes** : une case à cocher pour l'activer ou la désactiver, et un curseur pour choisir l'intervalle, de **30 à 120 secondes** par pas de 15 (30 s par défaut).
 - **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
 
 Les choix sont enregistrés et retrouvés au prochain démarrage.

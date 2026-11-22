@@ -80,6 +80,38 @@
   color: var(--text-secondary);
 }
 
+.refresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.refresh-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.refresh-slider input[type="range"] {
+  flex: 1;
+  accent-color: var(--twitch-purple);
+  cursor: pointer;
+}
+
+.refresh-slider input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.refresh-slider output {
+  min-width: 48px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 .settings-row legend {
   margin-bottom: 8px;
   padding: 0;
@@ -682,50 +714,46 @@ button {
 /* Boutons d'action */
 .card-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   margin-top: auto;
 }
 
-.btn-action-mod {
-  background: rgba(145, 70, 255, 0.15);
-  color: var(--twitch-purple-light);
-  border: 1px solid rgba(145, 70, 255, 0.35);
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-}
-.btn-action-mod:hover {
-  background: var(--twitch-purple);
-  color: #fff;
-}
-
-.btn-action-stream {
+/* Gérer et Chat : gris ; Stream : violet */
+.btn-action-mod,
+.btn-action-chat {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
-.btn-action-stream:hover {
+.btn-action-mod:hover,
+.btn-action-chat:hover {
   background: var(--bg-hover);
   border-color: var(--text-secondary);
 }
 
-.btn-action-chat {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  width: 34px;
+.btn-action-stream {
+  background: var(--twitch-purple);
+  color: #fff;
+  border: 1px solid var(--twitch-purple);
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
 }
-.btn-action-chat:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+.btn-action-stream:hover {
+  background: var(--twitch-purple-hover);
+  border-color: var(--twitch-purple-hover);
 }
 
 /* État de chargement */

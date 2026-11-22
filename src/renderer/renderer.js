@@ -60,6 +60,8 @@ const dom = {
   btnSettings: document.getElementById('btn-settings'),
   settingsDialog: document.getElementById('settings-dialog'),
   settingRefresh: document.getElementById('setting-refresh'),
+  settingRefreshEnabled: document.getElementById('setting-refresh-enabled'),
+  settingRefreshValue: document.getElementById('setting-refresh-value'),
   loadingSpinner: document.getElementById('loading-spinner'),
   channelsGrid: document.getElementById('channels-grid'),
   emptyState: document.getElementById('empty-state'),
@@ -876,10 +878,12 @@ function createChannelCard(channel) {
 
   const btnChat = document.createElement('button');
   btnChat.className = 'btn-action-chat';
+  btnChat.title = 'Ouvrir le chat dans une fenêtre détachée';
   btnChat.innerHTML = `
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h6"></path>
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
     </svg>
+    Chat
   `;
   btnChat.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1466,7 +1470,7 @@ function escapeHtml(str) {
 
 function startAutoRefresh() {
   stopAutoRefresh();
-  if (!state.settings.refreshSeconds) return; // désactivée dans les paramètres
+  if (!state.settings.autoRefresh) return; // désactivée dans les paramètres
   state.autoRefreshTimer = setInterval(() => {
     if (!state.currentChannel) {
       fetchChannels();
@@ -1483,16 +1487,30 @@ function setupSettings() {
     saveSettings(state.settings);
   };
 
-  dom.btnSettings.addEventListener('click', () => {
+  const showRefreshControls = () => {
+    dom.settingRefreshEnabled.checked = state.settings.autoRefresh;
     dom.settingRefresh.value = String(state.settings.refreshSeconds);
+    dom.settingRefresh.disabled = !state.settings.autoRefresh;
+    dom.settingRefreshValue.textContent = `${state.settings.refreshSeconds} s`;
+  };
+  const applyRefresh = (changes) => {
+    updateSettings(changes);
+    showRefreshControls();
+    if (state.currentUser) startAutoRefresh();
+  };
+
+  dom.btnSettings.addEventListener('click', () => {
+    showRefreshControls();
     dom.settingsDialog.querySelector(`input[name="setting-theme"][value="${state.settings.theme}"]`).checked = true;
     dom.settingsDialog.showModal();
   });
 
-  dom.settingRefresh.addEventListener('change', (e) => {
-    updateSettings({ refreshSeconds: Number(e.target.value) });
-    if (state.currentUser) startAutoRefresh();
+  dom.settingRefreshEnabled.addEventListener('change', (e) => applyRefresh({ autoRefresh: e.target.checked }));
+  // Pendant le glissement : affichage seulement ; au relâchement : enregistrement
+  dom.settingRefresh.addEventListener('input', (e) => {
+    dom.settingRefreshValue.textContent = `${e.target.value} s`;
   });
+  dom.settingRefresh.addEventListener('change', (e) => applyRefresh({ refreshSeconds: Number(e.target.value) }));
 
   dom.settingsDialog.querySelectorAll('input[name="setting-theme"]').forEach(radio => {
     radio.addEventListener('change', (e) => {

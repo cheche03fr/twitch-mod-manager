@@ -1,8 +1,15 @@
 // Paramètres de l'application (actualisation auto, thème), enregistrés dans localStorage
 const SETTINGS_KEY = 'twitch_mod_manager_settings';
-const REFRESH_CHOICES = [0, 30, 120]; // secondes, 0 = désactivée
+const REFRESH_MIN = 30;
+const REFRESH_MAX = 120;
+const REFRESH_STEP = 15; // mêmes bornes que le curseur de index.html
 const THEMES = ['dark', 'light'];
-const DEFAULT_SETTINGS = Object.freeze({ refreshSeconds: 30, theme: 'dark' });
+const DEFAULT_SETTINGS = Object.freeze({ autoRefresh: true, refreshSeconds: 30, theme: 'dark' });
+
+function isValidRefresh(seconds) {
+  return Number.isInteger(seconds) && seconds >= REFRESH_MIN && seconds <= REFRESH_MAX
+    && (seconds - REFRESH_MIN) % REFRESH_STEP === 0;
+}
 
 /** Valide un JSON enregistré : toute valeur inconnue revient à la valeur par défaut. */
 function parseSettings(raw) {
@@ -12,8 +19,10 @@ function parseSettings(raw) {
   } catch {
     saved = {};
   }
+  const legacyDisabled = saved.refreshSeconds === 0; // v1.0.8 : 0 voulait dire « désactivée »
   return {
-    refreshSeconds: REFRESH_CHOICES.includes(saved.refreshSeconds) ? saved.refreshSeconds : DEFAULT_SETTINGS.refreshSeconds,
+    autoRefresh: typeof saved.autoRefresh === 'boolean' ? saved.autoRefresh : !legacyDisabled,
+    refreshSeconds: isValidRefresh(saved.refreshSeconds) ? saved.refreshSeconds : DEFAULT_SETTINGS.refreshSeconds,
     theme: THEMES.includes(saved.theme) ? saved.theme : DEFAULT_SETTINGS.theme
   };
 }

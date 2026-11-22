@@ -632,14 +632,16 @@
     <form method="dialog">
       <h2 id="settings-title">Paramètres</h2>
 
-      <label class="settings-row" for="setting-refresh">
-        <span>Actualisation automatique des chaînes</span>
-        <select id="setting-refresh" class="sort-select">
-          <option value="30">Toutes les 30 secondes</option>
-          <option value="120">Toutes les 120 secondes</option>
-          <option value="0">Désactivée</option>
-        </select>
-      </label>
+      <div class="settings-row">
+        <label class="refresh-toggle">
+          <input type="checkbox" id="setting-refresh-enabled">
+          <span>Actualisation automatique des chaînes</span>
+        </label>
+        <div class="refresh-slider">
+          <input type="range" id="setting-refresh" min="30" max="120" step="15" aria-label="Intervalle d'actualisation en secondes">
+          <output id="setting-refresh-value" for="setting-refresh">30 s</output>
+        </div>
+      </div>
 
       <fieldset class="settings-row">
         <legend>Thème</legend>

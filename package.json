@@ -1,6 +1,6 @@
 {
   "name": "twitch-mod-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Application de bureau pour afficher et gérer toutes les chaînes Twitch où vous êtes modérateur.",
   "main": "src/main.js",
   "scripts": {

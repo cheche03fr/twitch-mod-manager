@@ -1,0 +1,45 @@
+{
+  "name": "twitch-mod-manager",
+  "version": "1.0.0",
+  "description": "Application de bureau pour afficher et gérer toutes les chaînes Twitch où vous êtes modérateur.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/test-logic.js",
+    "dist": "electron-builder --win --publish never"
+  },
+  "keywords": [
+    "twitch",
+    "moderation",
+    "electron"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "fr.cheche03.twitchmodmanager",
+    "productName": "Twitch Mod Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

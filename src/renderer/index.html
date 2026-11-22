@@ -1,0 +1,629 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitch Mod Manager</title>
+  <link rel="icon" type="image/png" href="../../assets/icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header principal de l'application -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="logo-icon">
+        <img src="../../assets/icon.png" alt="Marteau de modération" width="28" height="28" onerror="this.style.display='none'">
+      </div>
+      <div>
+        <h1 class="app-title">Twitch Mod Manager</h1>
+        <p class="app-subtitle">Gestionnaire des chaînes modérées</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Section utilisateur connecté -->
+      <div id="user-profile" class="user-profile hidden">
+        <img id="user-avatar" class="user-avatar" src="" alt="Avatar">
+        <div class="user-info">
+          <span id="user-name" class="user-name"></span>
+          <span class="user-role">Modérateur & Éditeur</span>
+        </div>
+        <button id="btn-refresh" class="btn-icon" title="Rafraîchir les statuts">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+        <button id="btn-logout" class="btn-secondary btn-sm">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Écran de connexion (Hors ligne) -->
+  <main id="auth-screen" class="view-container">
+    <div class="hero-card">
+      <div class="hero-icon">
+        <img src="../../assets/icon.png" alt="Marteau de modération" width="72" height="72" style="border-radius: 12px; box-shadow: 0 4px 16px rgba(145, 70, 255, 0.4);">
+      </div>
+      <h2>Bienvenue sur Twitch Mod Manager</h2>
+      <p class="hero-text">
+        Accédez en un clic à l'ensemble des chaînes Twitch dont vous êtes modérateur ou éditeur,
+        suivez leur direct et modérez avec une grille 100% personnalisable (tailles et emplacements à votre guise).
+      </p>
+
+      <div class="hero-features">
+        <div class="feature-item">
+          <span class="feature-icon">🛡️</span>
+          <span>Vue Modérateur complète : Flux, Chat, AutoMod, Actions, Édition, Chatters</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📐</span>
+          <span>Disposition 100% libre : Glisser-déposer et redimensionner chaque panneau à la souris</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">💾</span>
+          <span>Sauvegarde automatique de votre agencement sur mesure</span>
+        </div>
+      </div>
+
+      <button id="btn-login" class="btn-primary btn-large">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+        </svg>
+        Se connecter avec Twitch
+      </button>
+
+      <div id="auth-status" class="status-message"></div>
+      <p class="auth-security-notice">
+        🔒 Connexion sécurisée officielle Twitch. Aucun mot de passe n'est enregistré.
+      </p>
+    </div>
+  </main>
+
+  <!-- Tableau de bord principal (Liste des chaînes) -->
+  <main id="dashboard-screen" class="view-container hidden">
+    <!-- Barre de statistiques et contrôles -->
+    <div class="dashboard-controls">
+      <!-- Filtres par statut -->
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-filter="all">
+          Toutes <span id="count-all" class="badge">0</span>
+        </button>
+        <button class="filter-tab" data-filter="live">
+          <span class="live-dot pulse"></span> En direct <span id="count-live" class="badge badge-live">0</span>
+        </button>
+        <button class="filter-tab" data-filter="offline">
+          Hors ligne <span id="count-offline" class="badge">0</span>
+        </button>
+      </div>
+
+      <!-- Recherche & Tri -->
+      <div class="search-sort-group">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="search-input" placeholder="Rechercher une chaîne ou un jeu..." autocomplete="off">
+          <button id="search-clear" class="btn-clear hidden">&times;</button>
+        </div>
+
+        <select id="sort-select" class="sort-select">
+          <option value="live-first">En direct d'abord</option>
+          <option value="viewers-desc">Spectateurs (décroissant)</option>
+          <option value="name-asc">Nom (A-Z)</option>
+          <option value="name-desc">Nom (Z-A)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Info-barre d'actualisation -->
+    <div class="dashboard-status-bar">
+      <span id="last-update-text">Mis à jour il y a quelques secondes</span>
+      <label class="auto-refresh-label">
+        <input type="checkbox" id="auto-refresh-toggle" checked>
+        <span>Actualisation auto (60s)</span>
+      </label>
+    </div>
+
+    <!-- État de chargement -->
+    <div id="loading-spinner" class="loading-state">
+      <div class="spinner"></div>
+      <p id="loading-text">Chargement de vos chaînes modérées...</p>
+    </div>
+
+    <!-- Grille des cartes de chaînes -->
+    <div id="channels-grid" class="channels-grid"></div>
+
+    <!-- État vide -->
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">🔍</div>
+      <h3 id="empty-title">Aucune chaîne trouvée</h3>
+      <p id="empty-desc">Aucune chaîne ne correspond à votre filtre actuel.</p>
+    </div>
+  </main>
+
+  <!-- ========================================================
+       ESPACE MODÉRATEUR PERSONNALISABLE (GRILLE LIBRE)
+       ======================================================== -->
+  <main id="mod-screen" class="view-container hidden mod-screen-container">
+    <!-- Barre supérieure de navigation et personnalisation -->
+    <div class="mod-nav-bar">
+      <div class="mod-nav-left">
+        <button id="btn-back-to-channels" class="btn-secondary">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Retour aux chaînes
+        </button>
+
+        <div class="mod-streamer-header">
+          <div class="mod-streamer-avatar-wrapper">
+            <img id="mod-streamer-avatar" class="channel-avatar" src="" alt="Avatar">
+            <span id="mod-live-indicator" class="live-indicator hidden">LIVE</span>
+          </div>
+          <div class="mod-streamer-info">
+            <div class="mod-streamer-title-row">
+              <h2 id="mod-streamer-name">Streamer</h2>
+              <span id="mod-streamer-status" class="status-tag offline">Hors ligne</span>
+            </div>
+            <div class="mod-streamer-sub">
+              <span id="mod-streamer-login">@streamer</span>
+              <span id="mod-streamer-game" class="mod-game-tag">Discussion</span>
+              <span id="mod-streamer-viewers" class="mod-viewers-tag">0 spectateurs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contrôles au centre/droite : Personnalisation de la grille -->
+      <div class="mod-nav-right">
+        <!-- Menu déroulant Widgets -->
+        <div class="relative">
+          <button id="btn-widgets-menu" class="btn-secondary">
+            <span>＋ Panneaux</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div id="widgets-dropdown" class="widgets-dropdown hidden">
+            <div class="dropdown-header">Afficher / Masquer les panneaux</div>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-stream" checked> 📺 Flux Vidéo</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-chat" checked> 💬 Chat du Stream</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-quick-mod" checked> ⚡ Actions Rapides</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-actions-log" checked> 📋 Actions de Modérateur</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-automod" checked> 🤖 File d'attente AutoMod</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-chatters" checked> 👥 Chatters & Communauté</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-stream-editor" checked> ✏️ Édition du Stream</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-activity" checked> 📊 Détails & Uptime</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-predictions" checked> Predictions</label>
+          </div>
+        </div>
+
+        <button id="btn-reset-layout" class="btn-secondary" title="Réinitialiser l'agencement par défaut">
+          🔄 Réinitialiser la grille
+        </button>
+
+        <div class="mod-view-tabs">
+          <button id="tab-mod-integrated" class="tab-btn active">🛡️ Grille Modérateur</button>
+          <button id="tab-mod-webview" class="tab-btn">🌐 Vue Twitch Officielle</button>
+        </div>
+
+        <button id="btn-open-browser-mod" class="btn-icon" title="Ouvrir dans le navigateur externe">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================
+         GRILLE MODULAIRE (DRAG & DROP, RESIZABLE, EMPLACEMENTS LIBRES)
+         ======================================================== -->
+    <div id="view-mod-integrated" class="mod-grid-wrapper">
+      <div id="mod-custom-grid" class="mod-custom-grid">
+
+        <!-- 1. WIDGET : FLUX VIDÉO DU STREAM -->
+        <div class="grid-widget col-span-7" id="widget-stream" draggable="true" data-widget-id="widget-stream">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">📺</span>
+              <h3>Flux</h3>
+              <span class="badge badge-live" style="font-size:10px;">LIVE</span>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-widget-size" data-size="col-span-6" title="Largeur 50%">½</button>
+              <button class="btn-widget-size" data-size="col-span-7" title="Largeur 60%">60%</button>
+              <button class="btn-widget-size" data-size="col-span-12" title="Plein écran">Plein</button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body stream-body">
+            <iframe id="twitch-stream-iframe" src="" allowfullscreen="true" scrolling="no"></iframe>
+          </div>
+        </div>
+
+        <!-- 2. WIDGET : CHAT DU STREAM -->
+        <div class="grid-widget col-span-5" id="widget-chat" draggable="true" data-widget-id="widget-chat">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">💬</span>
+              <h3>Chat</h3>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-widget-size" data-size="col-span-4" title="Largeur 33%">⅓</button>
+              <button class="btn-widget-size" data-size="col-span-5" title="Largeur 40%">40%</button>
+              <button class="btn-widget-size" data-size="col-span-6" title="Largeur 50%">½</button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body chat-body">
+            <iframe id="twitch-chat-iframe" src="" scrolling="no"></iframe>
+          </div>
+        </div>
+
+        <!-- 3. WIDGET : ACTIONS DE MODÉRATEUR (HISTORIQUE DES ACTIONS) -->
+        <div class="grid-widget col-span-4" id="widget-actions-log" draggable="true" data-widget-id="widget-actions-log">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">📋</span>
+              <h3>Actions de Modérateur</h3>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-clear-actions-log" class="btn-icon btn-sm" title="Effacer l'historique local">🗑️</button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body mod-actions-body">
+            <div class="actions-log-filter">
+              <input type="text" id="log-search-input" placeholder="Filtrer l'historique..." class="input-sm">
+            </div>
+            <div id="mod-actions-list" class="mod-actions-list">
+              <div class="log-entry system">
+                <span class="log-time">Maintenant</span>
+                <span class="log-text">🛡️ Espace modérateur prêt. Les actions apparaîtront ici en direct.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. WIDGET : FILE D'ATTENTE DE L'AUTOMOD -->
+        <div class="grid-widget col-span-4" id="widget-automod" draggable="true" data-widget-id="widget-automod">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">🤖</span>
+              <h3>File d'Attente de l'AutoMod</h3>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body automod-body">
+            <div id="automod-queue-list" class="automod-queue-list">
+              <div class="automod-empty">
+                <span>✅ Aucun message en attente dans la file AutoMod.</span>
+              </div>
+            </div>
+      
+
+</div>
+        </div>
+
+        
+<!-- 9. WIDGET : PREDICTIONS -->
+        <div class="grid-widget col-span-6" id="widget-predictions" draggable="true" data-widget-id="widget-predictions">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">🔮</span>
+              <h3>Prédictions</h3>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-new-prediction" class="btn-primary btn-sm" title="Créer une prédiction">+ Nouvelle</button>
+              <button id="btn-refresh-predictions" class="btn-icon btn-sm" title="Actualiser">↻</button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body predictions-body" style="overflow-y:auto; padding:8px;">
+            <div id="predictions-status" class="text-muted" style="padding:8px;">Chargement...</div>
+            <div id="predictions-active" style="display:none;">
+              <div id="prediction-current" style="background:var(--bg-secondary);border-radius:8px;padding:10px;margin-bottom:8px;">
+                <div id="pred-title" style="font-weight:600;margin-bottom:4px;">-</div>
+                <div id="pred-meta" style="font-size:11px;color:var(--text-muted);margin-bottom:8px;"></div>
+                <div id="pred-outcomes" class="pred-outcomes-list"></div>
+                <div id="pred-actions-row" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+              </div>
+            </div>
+            <div id="predictions-history">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;">Historique</div>
+              <ul id="predictions-history-list" style="list-style:none;margin:0;padding:0;"></ul>
+            </div>
+            <div id="prediction-modal" style="display:none;background:var(--bg-secondary);border-radius:8px;padding:12px;margin-top:10px;border:1px solid var(--border);">
+              <div style="font-weight:600;margin-bottom:8px;">Nouvelle Prediction</div>
+              <input type="text" id="pred-new-title" placeholder="Question de la prediction..." style="width:100%;box-sizing:border-box;margin-bottom:6px;" maxlength="45">
+              <div id="pred-outcomes-inputs">
+                <input type="text" class="pred-outcome-input" placeholder="Choix 1..." style="width:100%;box-sizing:border-box;margin-bottom:4px;" maxlength="25">
+                <input type="text" class="pred-outcome-input" placeholder="Choix 2..." style="width:100%;box-sizing:border-box;margin-bottom:4px;" maxlength="25">
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:12px;">Duree :
+                  <select id="pred-duration">
+                    <option value="60">1 min</option>
+                    <option value="120">2 min</option>
+                    <option value="300" selected>5 min</option>
+                    <option value="600">10 min</option>
+                    <option value="1800">30 min</option>
+                  </select>
+                </label>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button id="btn-create-prediction" class="btn-primary btn-sm">Creer</button>
+                <button id="btn-cancel-prediction" class="btn-secondary btn-sm">Annuler</button>
+              </div>
+              <div id="prediction-create-feedback" class="action-feedback"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. WIDGET : SPECTATEURS & CHATTERS (COMMUNAUTÉ) -->
+        <div class="grid-widget col-span-4" id="widget-chatters" draggable="true" data-widget-id="widget-chatters">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">👥</span>
+              <h3>Communauté (<span id="chatters-count">0</span>)</h3>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-refresh-chatters" class="btn-icon btn-sm" title="Actualiser la liste">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+              </button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body chatters-body">
+            <input type="text" id="chatters-search" class="input-sm mb-6" placeholder="Rechercher un pseudo...">
+            <div id="chatters-list" class="chatters-list-box"></div>
+          </div>
+        </div>
+
+        <!-- 6. WIDGET : ACTIONS RAPIDES DE MODÉRATION -->
+        <div class="grid-widget col-span-6" id="widget-quick-mod" draggable="true" data-widget-id="widget-quick-mod">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">⚡</span>
+              <h3>Actions Rapides de Modération</h3>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body">
+            <!-- Sanction / Timeout -->
+            <div class="mod-form-group">
+              <div class="target-row">
+                <input type="text" id="ban-user-input" placeholder="Pseudo à sanctionner (@user)..." autocomplete="off">
+                <button id="btn-apply-sanction" class="btn-primary btn-sm">Appliquer</button>
+              </div>
+            </div>
+
+            <div class="duration-presets" id="duration-presets">
+              <button type="button" class="preset-btn active" data-duration="1">1s (Purge)</button>
+              <button type="button" class="preset-btn" data-duration="60">1 min</button>
+              <button type="button" class="preset-btn" data-duration="600">10 min</button>
+              <button type="button" class="preset-btn" data-duration="3600">1h</button>
+              <button type="button" class="preset-btn" data-duration="86400">24h</button>
+              <button type="button" class="preset-btn btn-danger-text" data-duration="0">Ban permanent</button>
+            </div>
+
+            <div class="mod-form-group mt-6">
+              <input type="text" id="ban-reason-input" class="input-sm" placeholder="Motif de la sanction...">
+            </div>
+            <div id="ban-feedback" class="action-feedback"></div>
+
+            <!-- Toggles de modes de chat -->
+            <div class="chat-toggles-grid mt-10">
+              <label class="toggle-card">
+                <input type="checkbox" id="toggle-slow-mode">
+                <div class="toggle-content">
+                  <span class="toggle-title">Mode Ralenti</span>
+                  <span class="toggle-desc">3s entre messages</span>
+                </div>
+              </label>
+
+              <label class="toggle-card">
+                <input type="checkbox" id="toggle-sub-mode">
+                <div class="toggle-content">
+                  <span class="toggle-title">Abonnés seuls</span>
+                  <span class="toggle-desc">Réservé aux subs</span>
+                </div>
+              </label>
+
+              <label class="toggle-card">
+                <input type="checkbox" id="toggle-emote-mode">
+                <div class="toggle-content">
+                  <span class="toggle-title">Émotes seules</span>
+                  <span class="toggle-desc">Uniquement émotes</span>
+                </div>
+              </label>
+
+              <label class="toggle-card">
+                <input type="checkbox" id="toggle-follower-mode">
+                <div class="toggle-content">
+                  <span class="toggle-title">Followers seuls</span>
+                  <span class="toggle-desc">Abonnés chaîne</span>
+                </div>
+              </label>
+            </div>
+
+            <div class="quick-buttons-row mt-10">
+              <button id="btn-clear-chat" class="btn-secondary btn-danger-outline btn-sm">
+                🗑️ Purger le chat
+              </button>
+              <button id="btn-toggle-shield" class="btn-secondary btn-sm">
+                🛡️ Mode Bouclier
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. WIDGET : ÉDITION DU STREAM (RÔLE ÉDITEUR) -->
+        <div class="grid-widget col-span-6" id="widget-stream-editor" draggable="true" data-widget-id="widget-stream-editor">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">✏️</span>
+              <h3>Édition de la Chaîne (Éditeur)</h3>
+              <span class="editor-badge" id="editor-role-badge" style="font-size:10px;">Vérification...</span>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-refresh-channel-info" class="btn-icon btn-sm" title="Recharger les infos du live">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+              </button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body">
+            <!-- Titre -->
+            <div class="mod-form-group">
+              <div class="label-row">
+                <label for="edit-stream-title">Titre du live :</label>
+                <span id="title-char-count" class="char-count">0 / 140</span>
+              </div>
+              <input type="text" id="edit-stream-title" maxlength="140" placeholder="Titre du stream..." autocomplete="off">
+            </div>
+
+            <!-- Jeu / Catégorie -->
+            <div class="mod-form-group relative mt-6">
+              <label for="edit-category-search">Catégorie / Jeu :</label>
+              <div class="category-selected-display" id="category-selected-box">
+                <img id="selected-game-image" src="" alt="" class="game-thumb hidden">
+                <div class="selected-game-info">
+                  <span id="selected-game-name" class="game-name">Aucune catégorie</span>
+                  <span id="selected-game-id" class="game-id-sub"></span>
+                </div>
+              </div>
+              <input type="text" id="edit-category-search" placeholder="Rechercher un jeu..." autocomplete="off">
+              <div id="category-results-dropdown" class="category-dropdown hidden"></div>
+            </div>
+
+            <!-- Tags -->
+            <div class="mod-form-group mt-6">
+              <label>Balises (Tags) :</label>
+              <div id="tags-container" class="tags-container"></div>
+              <div class="add-tag-row">
+                <input type="text" id="new-tag-input" placeholder="Ajouter un tag..." maxlength="25">
+                <button type="button" id="btn-add-tag" class="btn-secondary btn-sm">+ Ajouter</button>
+              </div>
+            </div>
+
+            <!-- Bouton de sauvegarde et publicités -->
+            <div class="editor-actions-row mt-10">
+              <button id="btn-save-channel-info" class="btn-primary btn-sm flex-1">
+                💾 Enregistrer les infos
+              </button>
+              <button id="btn-open-stream-manager" class="btn-secondary btn-sm" title="Ouvrir Stream Manager sur Twitch">
+                Dashboard ↗
+              </button>
+            </div>
+            <div id="editor-save-feedback" class="action-feedback"></div>
+
+            <!-- Coupures pubs -->
+            <div class="commercial-strip mt-8">
+              <span class="commercial-label">Lancer une pub :</span>
+              <div class="commercial-presets">
+                <button type="button" class="btn-commercial" data-duration="30">30s</button>
+                <button type="button" class="btn-commercial" data-duration="60">60s</button>
+                <button type="button" class="btn-commercial" data-duration="90">90s</button>
+                <button type="button" class="btn-commercial" data-duration="120">2m</button>
+                <button type="button" class="btn-commercial" data-duration="180">3m</button>
+              </div>
+            </div>
+            <div id="commercial-feedback" class="action-feedback"></div>
+          </div>
+        </div>
+
+        <!-- 8. WIDGET : FLUX D'ACTIVITÉ & INFOS DU DIRECT -->
+        <div class="grid-widget col-span-12" id="widget-activity" draggable="true" data-widget-id="widget-activity">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">📊</span>
+              <h3>Détails du Direct & Flux d'Activité</h3>
+            </div>
+            <div class="widget-actions">
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body activity-body">
+            <div class="stream-stats-cards">
+              <div class="stat-card">
+                <span class="stat-label">Statut</span>
+                <span id="stat-stream-status" class="stat-value">Hors ligne</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Spectateurs en direct</span>
+                <span id="stat-stream-viewers" class="stat-value">0</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Jeu / Catégorie</span>
+                <span id="stat-stream-game" class="stat-value">Discussion</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Uptime</span>
+                <span id="stat-stream-uptime" class="stat-value">00:00:00</span>
+              </div>
+            </div>
+            <div class="rights-overview-strip mt-10">
+              <span class="strip-label">Droits actifs sur cette chaîne :</span>
+              <div id="mod-rights-summary" class="mod-rights-badges">
+                <span class="right-pill" id="right-pill-bans">🔨 Exclusions</span>
+                <span class="right-pill" id="right-pill-chat">💬 Chat</span>
+                <span class="right-pill" id="right-pill-chatters">👥 Chatters</span>
+                <span class="right-pill" id="right-pill-shield">🛡️ Bouclier</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Conteneur 2 : Webview Twitch Mod View Officielle -->
+    <div id="view-mod-webview" class="mod-webview-layout hidden">
+      <webview 
+        id="twitch-mod-webview" 
+        src="" 
+        allowpopups 
+        partition="persist:twitch_mod"
+        useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+        style="width: 100%; height: 100%; display: flex; flex: 1 1 100%; border: none;">
+      </webview>
+    </div>
+  </main>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# Contient le jeton Twitch : ne jamais publier
+data/
+*.lnk

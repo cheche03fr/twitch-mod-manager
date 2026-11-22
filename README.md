@@ -15,7 +15,7 @@ Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, 
 
 Au démarrage, l'application vérifie s'il existe une nouvelle version et la télécharge en arrière-plan. Une fenêtre vous propose alors **Installer maintenant** ou **Plus tard** : rien n'est installé sans votre accord.
 
-La version installée et sa date sont affichées en bas de la fenêtre.
+La version installée et sa date sont affichées dans le pied de page, toujours visible en bas de la fenêtre.
 
 ---
 
@@ -30,6 +30,8 @@ La version installée et sa date sont affichées en bas de la fenêtre.
 
 ### Écran de modération
 L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n'avez pas le droit d'utiliser n'est pas affichée (ni son panneau, ni son entrée dans le menu ＋ Panneaux).
+
+Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête** ; leur taille, leur ordre et leur affichage sont enregistrés.
 
 - **Stream et chat intégrés** côte à côte.
 - **Sanctions** : timeout ou ban d'un pseudo, avec motif.

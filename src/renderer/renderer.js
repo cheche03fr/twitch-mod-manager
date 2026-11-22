@@ -448,6 +448,14 @@ function setupGridCustomization() {
     // ==========================================
     // Glisser-Déposer (Drag & Drop natif HTML5)
     // ==========================================
+    // Le panneau ne se déplace qu'en le prenant par son en-tête (hors boutons)
+    widget.draggable = false;
+    const header = widget.querySelector('.widget-header');
+    header.addEventListener('mousedown', (e) => {
+      widget.draggable = !e.target.closest('button, input, a, select');
+    });
+    document.addEventListener('mouseup', () => { widget.draggable = false; });
+
     widget.addEventListener('dragstart', (e) => {
       state.draggedWidgetId = widget.id;
       widget.classList.add('is-dragging');
@@ -456,6 +464,7 @@ function setupGridCustomization() {
     });
 
     widget.addEventListener('dragend', () => {
+      widget.draggable = false; // pas de mouseup après un glisser-déposer
       state.draggedWidgetId = null;
       widgets.forEach(w => {
         w.classList.remove('is-dragging', 'drag-over');

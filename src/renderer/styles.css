@@ -138,6 +138,9 @@
 /* Pied de page : auteur, version, date de la version */
 .app-footer {
   margin-top: auto;
+  position: sticky; /* reste visible en bas de la fenêtre même quand la page défile */
+  bottom: 0;
+  z-index: 100;
   height: var(--footer-height);
   flex-shrink: 0;
   display: flex;
@@ -1567,6 +1570,14 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Le panneau se déplace en le prenant par son en-tête */
+.widget-header {
+  cursor: grab;
+}
+.widget-header button {
+  cursor: pointer;
 }
 
 .drag-handle {

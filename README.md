@@ -25,7 +25,7 @@ La version installée et sa date sont affichées en bas de la fenêtre.
 - **Détection automatique** de toutes les chaînes où vous êtes modérateur.
 - **Statut en direct** : titre du live, jeu, nombre de spectateurs et avatar du streamer.
 - **Recherche** par chaîne ou par jeu, **filtres** *Toutes / En direct / Hors ligne*, **tri** *En direct d'abord / Spectateurs / Nom (A-Z, Z-A)*.
-- **Actualisation automatique** toutes les 60 secondes (désactivable).
+- **Actualisation automatique** des statuts (intervalle réglable dans les Paramètres).
 - Boutons rapides : **Gérer** (écran de modération), **Stream** et **Chat** (*popout*) sur Twitch.
 
 ### Écran de modération
@@ -43,6 +43,13 @@ Si vous êtes aussi éditeur de la chaîne : modifier le **titre**, le **jeu**, 
 ### Prédictions
 - Sur **votre propre chaîne** : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique.
 - Sur la chaîne d'un **autre streamer** : l'API Twitch réserve les prédictions au propriétaire de la chaîne. L'application propose alors un bouton qui ouvre les prédictions dans la Mod View de Twitch.
+
+### ⚙️ Paramètres
+Bouton **⚙️** en haut à droite :
+- **Actualisation automatique des chaînes** : toutes les **30 secondes** (par défaut), toutes les **120 secondes**, ou **désactivée**.
+- **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
+
+Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 ---
 

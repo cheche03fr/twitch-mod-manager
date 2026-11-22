@@ -21,6 +21,88 @@
   --footer-height: 28px;
 }
 
+/* Thème clair (Paramètres → Thème) : mêmes variables, couleurs inversées */
+:root[data-theme="light"] {
+  --bg-primary: #f2f2f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e9e9ee;
+  --bg-card: #ffffff;
+  --bg-hover: #dedee5;
+  --border-color: #cfcfd8;
+  --border-subtle: #e2e2e8;
+  --twitch-purple-light: #6a24d6;
+  --color-live-bg: rgba(233, 25, 22, 0.1);
+  --text-primary: #0e0e10;
+  --text-secondary: #4a4a55;
+  --text-muted: #63636e;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Fenêtre Paramètres */
+.settings-dialog {
+  margin: auto; /* annule le "* { margin: 0 }" global qui empêche le centrage */
+  width: min(420px, 90vw);
+  padding: 24px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.settings-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.settings-dialog h2 {
+  margin: 0 0 20px;
+  font-size: 18px;
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+  border: none;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.settings-row legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.theme-choices {
+  display: flex;
+  gap: 18px;
+  color: var(--text-primary);
+}
+
+.theme-choices label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Pied de page : auteur, version, date de la version */
 .app-footer {
   margin-top: auto;
@@ -437,13 +519,6 @@ button {
   color: var(--text-muted);
   margin-bottom: 20px;
   padding: 0 4px;
-}
-
-.auto-refresh-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
 }
 
 /* Grille des cartes */
@@ -1312,7 +1387,7 @@ button {
 
 .tag-chip {
   background: rgba(145, 70, 255, 0.2);
-  color: #bf94ff;
+  color: var(--twitch-purple-light);
   border: 1px solid rgba(145, 70, 255, 0.4);
   padding: 3px 8px;
   border-radius: 12px;

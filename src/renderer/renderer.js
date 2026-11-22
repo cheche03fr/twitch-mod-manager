@@ -7,6 +7,7 @@ const state = {
   sortBy: 'live-first', // 'live-first' | 'viewers-desc' | 'name-asc' | 'name-desc'
   autoRefreshTimer: null,
   isRefreshing: false,
+  settings: loadSettings(), // settings.js
 
   // Espace modération active
   currentChannel: null,
@@ -56,7 +57,9 @@ const dom = {
   searchClear: document.getElementById('search-clear'),
   sortSelect: document.getElementById('sort-select'),
   lastUpdateText: document.getElementById('last-update-text'),
-  autoRefreshToggle: document.getElementById('auto-refresh-toggle'),
+  btnSettings: document.getElementById('btn-settings'),
+  settingsDialog: document.getElementById('settings-dialog'),
+  settingRefresh: document.getElementById('setting-refresh'),
   loadingSpinner: document.getElementById('loading-spinner'),
   channelsGrid: document.getElementById('channels-grid'),
   emptyState: document.getElementById('empty-state'),
@@ -155,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupGridCustomization();
   setupPredictionsWidget();
   setupFooter();
+  setupSettings();
   await checkExistingSession();
 });
 
@@ -214,11 +218,6 @@ function setupEventListeners() {
   dom.sortSelect.addEventListener('change', (e) => {
     state.sortBy = e.target.value;
     renderChannels();
-  });
-
-  dom.autoRefreshToggle.addEventListener('change', (e) => {
-    if (e.target.checked) startAutoRefresh();
-    else stopAutoRefresh();
   });
 
   // Navigation Modérateur
@@ -680,10 +679,7 @@ function onUserAuthenticated(user) {
   dom.userProfile.classList.remove('hidden');
 
   fetchChannels();
-
-  if (dom.autoRefreshToggle.checked) {
-    startAutoRefresh();
-  }
+  startAutoRefresh();
 }
 
 function showAuthScreen() {
@@ -951,7 +947,7 @@ async function openModerationScreen(channel) {
   // Chargement des iframes avec parent=localhost
   const originHost = window.location.hostname || 'localhost';
   dom.twitchStreamIframe.src = `https://player.twitch.tv/?channel=${channel.login}&parent=${originHost}&autoplay=true&muted=false`;
-  dom.twitchChatIframe.src = `https://www.twitch.tv/embed/${channel.login}/chat?parent=${originHost}&darkpopout`;
+  dom.twitchChatIframe.src = `https://www.twitch.tv/embed/${channel.login}/chat?parent=${originHost}${state.settings.theme === 'dark' ? '&darkpopout' : ''}`;
 
   // Réinitialiser les logs et formulaires
   dom.banUserInput.value = '';
@@ -1470,11 +1466,40 @@ function escapeHtml(str) {
 
 function startAutoRefresh() {
   stopAutoRefresh();
+  if (!state.settings.refreshSeconds) return; // désactivée dans les paramètres
   state.autoRefreshTimer = setInterval(() => {
     if (!state.currentChannel) {
       fetchChannels();
     }
-  }, 60000);
+  }, state.settings.refreshSeconds * 1000);
+}
+
+/**
+ * Fenêtre Paramètres : intervalle d'actualisation et thème, appliqués et enregistrés tout de suite
+ */
+function setupSettings() {
+  const updateSettings = (changes) => {
+    state.settings = { ...state.settings, ...changes };
+    saveSettings(state.settings);
+  };
+
+  dom.btnSettings.addEventListener('click', () => {
+    dom.settingRefresh.value = String(state.settings.refreshSeconds);
+    dom.settingsDialog.querySelector(`input[name="setting-theme"][value="${state.settings.theme}"]`).checked = true;
+    dom.settingsDialog.showModal();
+  });
+
+  dom.settingRefresh.addEventListener('change', (e) => {
+    updateSettings({ refreshSeconds: Number(e.target.value) });
+    if (state.currentUser) startAutoRefresh();
+  });
+
+  dom.settingsDialog.querySelectorAll('input[name="setting-theme"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      updateSettings({ theme: e.target.value });
+      applyTheme(state.settings.theme);
+    });
+  });
 }
 
 function stopAutoRefresh() {

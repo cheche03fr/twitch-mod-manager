@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Données des chaînes
   loadChannels: () => ipcRenderer.invoke('twitch:load-channels'),
   openExternal: (url) => ipcRenderer.invoke('util:open-external', url),
+  getAppInfo: () => ipcRenderer.invoke('app:get-info'),
 
   // Modération spécifique
   getModerationRights: (broadcasterId) => ipcRenderer.invoke('twitch:get-moderation-rights', broadcasterId),

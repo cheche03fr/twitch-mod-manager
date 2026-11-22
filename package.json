@@ -6,6 +6,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node tests/test-logic.js",
+    "predist": "node -e \"require('fs').writeFileSync('src/build-info.json', JSON.stringify({ buildDate: new Date().toISOString() }))\"",
     "dist": "electron-builder --win --publish never"
   },
   "keywords": [

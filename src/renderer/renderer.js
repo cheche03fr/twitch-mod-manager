@@ -154,8 +154,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupGridCustomization();
   setupPredictionsWidget();
+  setupFooter();
   await checkExistingSession();
 });
+
+/**
+ * Pied de page : version et date de la version
+ */
+async function setupFooter() {
+  try {
+    const { version, buildDate } = await window.electronAPI.getAppInfo();
+    document.getElementById('footer-version').textContent = 'v' + version;
+    document.getElementById('footer-date').textContent = buildDate
+      ? new Date(buildDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : 'version de développement';
+  } catch (err) {
+    console.error('setupFooter:', err);
+  }
+}
 
 /**
  * Configure tous les écouteurs d'événements

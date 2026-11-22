@@ -18,6 +18,38 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --transition: all 0.2s ease-in-out;
+  --footer-height: 28px;
+}
+
+/* Pied de page : auteur, version, date de la version */
+.app-footer {
+  margin-top: auto;
+  height: var(--footer-height);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.footer-author {
+  color: var(--twitch-purple-light);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer-author:hover,
+.footer-author:focus-visible {
+  color: var(--twitch-purple);
+  text-decoration: underline;
+}
+
+.footer-sep {
+  opacity: 0.5;
 }
 
 * {
@@ -688,7 +720,7 @@ button {
    ======================================================== */
 .mod-screen-container {
   max-width: 100% !important;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 64px - var(--footer-height));
   padding: 16px 24px;
   display: flex;
   flex-direction: column;

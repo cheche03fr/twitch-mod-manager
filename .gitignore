@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# Généré par "npm run dist" (date de compilation affichée en pied de page)
+src/build-info.json
 # Contient le jeton Twitch : ne jamais publier
 data/
 *.lnk

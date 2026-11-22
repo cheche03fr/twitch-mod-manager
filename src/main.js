@@ -465,6 +465,19 @@ function setupIpcHandlers() {
       return { success: false, error: err.message };
     }
   });
+  // Infos de l'application (pied de page)
+  ipcMain.handle('app:get-info', async () => {
+    let buildDate = null;
+    if (app.isPackaged) {
+      try {
+        buildDate = require('./build-info.json').buildDate; // créé par "npm run dist"
+      } catch (e) {
+        console.error('build-info.json introuvable:', e.message);
+      }
+    }
+    return { version: app.getVersion(), buildDate, isPackaged: app.isPackaged };
+  });
+
   // Ouvrir un lien externe
   ipcMain.handle('util:open-external', async (event, url) => {
     if (url && (url.startsWith('https://') || url.startsWith('http://'))) {

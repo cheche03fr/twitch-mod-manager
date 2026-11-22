@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Actions de modération Twitch en direct
   startModActions: (broadcasterIds) => ipcRenderer.invoke('twitch:start-mod-actions', broadcasterIds),
+  loadModLog: (broadcasterId) => ipcRenderer.invoke('twitch:load-mod-log', broadcasterId),
   onModAction: (callback) => ipcRenderer.on('twitch:mod-action', (_e, data) => callback(data)),
   onModActionsError: (callback) => ipcRenderer.on('twitch:mod-actions-error', (_e, data) => callback(data)),
 

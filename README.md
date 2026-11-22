@@ -50,8 +50,10 @@ Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête
 - **Purge du chat** et **mode bouclier**.
 - **Paramètres du chat** : mode lent, abonnés, émotes uniquement, followers.
 - **Liste des spectateurs** présents dans le chat, avec recherche.
-- **Actions de Modérateur** : raids, VIP, modérateurs, bans, exclusions, messages supprimés, avertissements, modes du chat… envoyés en direct par Twitch, avec le pseudo concerné, l'auteur et la date (« hier », « il y a 3 jours »). Les 100 dernières actions de chaque chaîne sont conservées, avec un filtre de recherche.
-  *Twitch ne donne pas accès aux actions passées : l'historique se remplit tant que l'application est ouverte (pour toutes vos chaînes modérées, même sans ouvrir leur écran).*
+- **Actions de Modérateur** : raids, VIP, modérateurs, bans, exclusions, messages supprimés, avertissements, modes du chat…, avec le pseudo concerné, l'auteur et la date (« hier », « il y a 3 jours »), et un filtre de recherche.
+  - **À chaque clic sur Gérer**, les **100 dernières actions** de la chaîne sont rechargées depuis Twitch, comme dans la Mod View, y compris celles faites quand l'application était fermée.
+  - Les nouvelles actions s'ajoutent ensuite **en direct**.
+  - *Il faut s'être connecté une fois à Twitch dans l'onglet **Vue Twitch officielle** : l'historique utilise cette session. Il passe par une API interne de Twitch, non officielle, qui peut cesser de fonctionner si Twitch la modifie ; l'application garde alors les actions reçues en direct.*
 - Onglet **Vue Twitch officielle** : la Mod View de Twitch directement dans l'application.
 
 ### Rôle éditeur de chaîne
@@ -78,6 +80,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
 - La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
+- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur).
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 

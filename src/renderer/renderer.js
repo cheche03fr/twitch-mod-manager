@@ -9,6 +9,7 @@ const state = {
   isRefreshing: false,
   settings: loadSettings(), // settings.js
   modActions: loadModActions(), // modActions.js : { [broadcasterId]: [{ receivedAt, event }] }
+  twitchModLog: {}, // historique lu sur Twitch à chaque « Gérer » : { [broadcasterId]: [{ receivedAt, twitch }] }
   modActionsNotice: '',
 
   // Espace modération active
@@ -290,9 +291,11 @@ function setupEventListeners() {
   // Historique des actions
   dom.btnClearActionsLog.addEventListener('click', () => {
     const channel = state.currentChannel;
-    if (!channel || !confirm(`Effacer l'historique des actions de ${channel.name} ? Il ne pourra pas être récupéré.`)) return;
+    if (!channel || !confirm(`Vider la liste des actions de ${channel.name} ? L'historique Twitch sera rechargé au prochain clic sur Gérer.`)) return;
     const { [channel.id]: _removed, ...rest } = state.modActions;
+    const { [channel.id]: _removedLog, ...restLog } = state.twitchModLog;
     state.modActions = rest;
+    state.twitchModLog = restLog;
     saveModActions(state.modActions);
     renderModActions();
   });
@@ -691,7 +694,7 @@ function restoreGridLayout() {
  */
 function renderModActions() {
   const channel = state.currentChannel;
-  const all = channel ? (state.modActions[channel.id] || []) : [];
+  const all = channel ? mergeModActions(state.twitchModLog[channel.id], state.modActions[channel.id]) : [];
   const query = dom.logSearchInput.value.toLowerCase().trim();
   const rows = all
     .map(entry => ({ entry, ...describeModAction(entry) }))
@@ -700,11 +703,11 @@ function renderModActions() {
   dom.modActionsCount.textContent = `${all.length} action${all.length > 1 ? 's' : ''}`;
   dom.modActionsList.replaceChildren();
 
-  if (state.modActionsNotice) {
+  [state.modLogNotice, state.modActionsNotice].filter(Boolean).forEach(notice => {
     dom.modActionsList.append(Object.assign(document.createElement('p'), {
-      className: 'card-hint', textContent: state.modActionsNotice
+      className: 'card-hint', textContent: notice
     }));
-  }
+  });
   if (rows.length === 0) {
     dom.modActionsList.append(Object.assign(document.createElement('p'), {
       className: 'card-hint',
@@ -900,6 +903,28 @@ async function startModActions() {
   } catch (err) {
     state.modActionsNotice = `⚠️ Suivi des actions indisponible : ${err.message}`;
   }
+  renderModActions();
+}
+
+/**
+ * Recharge l'historique passé des actions depuis Twitch (à chaque ouverture de l'écran de modération)
+ */
+async function loadTwitchModLog(channel) {
+  let notice = '';
+  try {
+    const res = await window.electronAPI.loadModLog(String(channel.id));
+    if (res.success) {
+      state.twitchModLog = { ...state.twitchModLog, [channel.id]: res.entries };
+    } else if (res.needsWebLogin) {
+      notice = '🔑 Connecte-toi une fois dans l\'onglet « Vue Twitch officielle » pour charger l\'historique passé.';
+    } else {
+      notice = `⚠️ Historique Twitch indisponible : ${res.error}`;
+    }
+  } catch (err) {
+    notice = `⚠️ Historique Twitch indisponible : ${err.message}`;
+  }
+  if (state.currentChannel?.id !== channel.id) return; // une autre chaîne a été ouverte entre-temps
+  state.modLogNotice = notice;
   renderModActions();
 }
 
@@ -1136,6 +1161,7 @@ async function openModerationScreen(channel) {
 
   dom.logSearchInput.value = '';
   renderModActions();
+  loadTwitchModLog(channel);
 
   // Tout ce qui demande un droit reste masqué tant que le droit n'est pas confirmé
   ALL_RIGHTS.forEach(right => showRight(right, false));

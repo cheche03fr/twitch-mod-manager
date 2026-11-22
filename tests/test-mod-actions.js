@@ -1,6 +1,7 @@
 // Vérifie le texte des actions de modération Twitch et l'historique par chaîne
 const assert = require('assert');
-const { describeModAction, formatRelativeTime, addModAction, MOD_ACTIONS_MAX } = require('../src/renderer/modActions');
+const { describeModAction, formatRelativeTime, addModAction, mergeModActions, MOD_ACTIONS_MAX } = require('../src/renderer/modActions');
+const { parseModActionLogs } = require('../src/twitchModLog');
 const { hasModActionsScopes } = require('../src/eventSubClient');
 const { SCOPES } = require('../src/config');
 
@@ -45,6 +46,40 @@ let many = one;
 for (let i = 0; i < MOD_ACTIONS_MAX + 5; i++) many = addModAction(many, entry({ action: 'vip', vip: { user_login: `u${i}` } }));
 assert.strictEqual(many['42'].length, MOD_ACTIONS_MAX);
 assert.strictEqual(many['42'][0].event.vip.user_login, `u${MOD_ACTIONS_MAX + 4}`);
+
+// Historique Twitch (réponse ModActionsList de la Mod View)
+const user = (login) => ({ token: { displayName: login.toUpperCase(), login, __typename: 'User' } });
+const text = (t) => ({ token: { text: t } });
+const gql = [{ data: { channel: { moderationActionLogs: { edges: [
+  { node: { createdAt: '2026-11-20T23:36:00Z', icon: 'RAID', title: { localizedStringFragments: [user('akasha')] },
+    content: { localizedStringFragments: [text('Raid lancé par '), user('rimfiire'), text(' avec 15 viewer·euse·s')] } } },
+  { node: { createdAt: '2026-11-19T10:00:00Z', icon: 'PERMISSION_ADDED', title: { localizedStringFragments: [text('Mode lent')] },
+    content: { localizedStringFragments: [text('Activé par '), user('cheche03fr')] } } },
+  { node: { createdAt: '2026-11-18T10:00:00Z', icon: 'NOUVELLE_ICONE', title: null, content: { localizedStringFragments: [text('Autre')] } } },
+  { node: null }
+] } } } }];
+const history = parseModActionLogs(gql);
+assert.deepStrictEqual(history[0], {
+  receivedAt: '2026-11-20T23:36:00Z',
+  twitch: { icon: '🪂', target: 'akasha', text: 'Raid lancé par RIMFIIRE avec 15 viewer·euse·s' }
+});
+assert.deepStrictEqual(history[1].twitch, { icon: '💬', target: null, text: 'Mode lent : Activé par CHECHE03FR' });
+assert.deepStrictEqual(history[2].twitch, { icon: '🛡️', target: null, text: 'Autre' }, 'icône inconnue : bouclier');
+assert.strictEqual(history.length, 3, 'entrée vide ignorée');
+assert.deepStrictEqual(describeModAction(history[0]), history[0].twitch);
+assert.throws(() => parseModActionLogs([{ errors: [{ message: 'PersistedQueryNotFound' }] }]), /PersistedQueryNotFound/);
+assert.throws(() => parseModActionLogs({}), /inattendue/);
+
+// Fusion : actions reçues en direct après l'historique en tête, sans doublon
+const live = [
+  { receivedAt: '2026-11-21T08:00:00Z', event: { action: 'clear' } },
+  { receivedAt: '2026-11-20T23:36:00Z', event: { action: 'raid' } }
+];
+const merged = mergeModActions(history, live);
+assert.strictEqual(merged.length, 4);
+assert.strictEqual(merged[0], live[0]);
+assert.strictEqual(mergeModActions(undefined, live), live, 'sans historique Twitch : actions en direct seules');
+assert.deepStrictEqual(mergeModActions(undefined, undefined), []);
 
 // La connexion demande bien tous les droits exigés par channel.moderate v2
 assert.ok(hasModActionsScopes(SCOPES.split(' ')), 'scopes de config suffisants');

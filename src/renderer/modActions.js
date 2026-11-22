@@ -34,6 +34,7 @@ function formatActionDuration(seconds) {
  * Transforme un événement channel.moderate en { icon, target, text } (le texte contient « par <modérateur> »).
  */
 function describeModAction(entry) {
+  if (entry.twitch) return entry.twitch; // historique Twitch : déjà rédigé par Twitch
   const e = entry.event;
   const by = ` par ${e.moderator_user_name || e.moderator_user_login || 'Twitch'}`;
   const shared = e.action.startsWith('shared_chat_');
@@ -120,10 +121,20 @@ function loadModActions() {
   }
 }
 
+/**
+ * Historique Twitch (s'il est chargé) + actions reçues en direct depuis, sans doublon, du plus récent au plus ancien
+ */
+function mergeModActions(twitchEntries, liveEntries) {
+  if (!Array.isArray(twitchEntries)) return liveEntries || [];
+  const newest = twitchEntries[0]?.receivedAt ? Date.parse(twitchEntries[0].receivedAt) : 0;
+  const newer = (liveEntries || []).filter(e => Date.parse(e.receivedAt) > newest);
+  return [...newer, ...twitchEntries];
+}
+
 function saveModActions(store) {
   localStorage.setItem(MOD_ACTIONS_KEY, JSON.stringify(store));
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = { describeModAction, formatRelativeTime, addModAction, MOD_ACTIONS_MAX };
+  module.exports = { describeModAction, formatRelativeTime, addModAction, mergeModActions, MOD_ACTIONS_MAX };
 }

@@ -5,6 +5,7 @@ const TwitchService = require('./twitchService');
 const localServer = require('./localServer');
 const { PORT } = require('./config');
 const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
+const { fetchTwitchModLog } = require('./twitchModLog');
 
 let mainWindow = null;
 
@@ -259,6 +260,19 @@ function setupIpcHandlers() {
       modActionsClient.start(sessionData.token, sessionData.userId, broadcasterIds.map(String));
       return { success: true };
     } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Historique passé des actions de modération (comme la Mod View de twitch.tv)
+  ipcMain.handle('twitch:load-mod-log', async (event, broadcasterId) => {
+    if (!/^\d+$/.test(String(broadcasterId))) {
+      return { success: false, error: 'Identifiant de chaîne invalide' };
+    }
+    try {
+      return await fetchTwitchModLog(session, broadcasterId);
+    } catch (err) {
+      console.error('Historique Twitch indisponible :', err.message);
       return { success: false, error: err.message };
     }
   });

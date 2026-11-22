@@ -161,6 +161,10 @@ const dom = {
 };
 
 // Initialisation au chargement de la page
+// Fenêtre ouverte sur une chaîne (bouton « Fenêtre » d'une carte) : ?channel=<identifiant>
+let pendingChannelId = new URLSearchParams(window.location.search).get('channel');
+const isChannelWindow = pendingChannelId !== null;
+
 document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupGridCustomization();
@@ -874,6 +878,11 @@ async function fetchChannels() {
       updateCounters();
       renderChannels();
       startModActions();
+      if (pendingChannelId) {
+        const channel = state.channels.find(c => String(c.id) === pendingChannelId);
+        pendingChannelId = null;
+        if (channel) openModerationScreen(channel);
+      }
 
       const now = new Date();
       const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1092,9 +1101,24 @@ function createChannelCard(channel) {
     window.electronAPI.openExternal(`https://www.twitch.tv/popout/${channel.login}/chat`);
   });
 
+  const btnWindow = document.createElement('button');
+  btnWindow.className = 'btn-action-chat';
+  btnWindow.title = 'Gérer cette chaîne dans une nouvelle fenêtre';
+  btnWindow.innerHTML = `
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="7" width="14" height="14" rx="2"></rect><path d="M8 3h11a2 2 0 0 1 2 2v11"></path>
+    </svg>
+    Fenêtre
+  `;
+  btnWindow.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.electronAPI.openChannelWindow(channel.id);
+  });
+
   cardActions.appendChild(btnMod);
   cardActions.appendChild(btnStream);
   cardActions.appendChild(btnChat);
+  cardActions.appendChild(btnWindow);
 
   card.appendChild(cardActions);
   return card;
@@ -1109,6 +1133,7 @@ function createChannelCard(channel) {
  */
 async function openModerationScreen(channel) {
   state.currentChannel = channel;
+  document.title = `${channel.name} — Twitch Mod Manager`; // pour s'y retrouver entre plusieurs fenêtres
 
   dom.dashboardScreen.classList.add('hidden');
   dom.modScreen.classList.remove('hidden');
@@ -1181,6 +1206,7 @@ async function openModerationScreen(channel) {
  */
 function closeModerationScreen() {
   state.currentChannel = null;
+  document.title = 'Twitch Mod Manager';
   state.currentRights = null;
   state.isEditor = false;
   stopUptimeCounter();
@@ -1782,8 +1808,8 @@ function setupSettings() {
     window.electronAPI.checkForUpdates(state.settings.betaUpdates);
   });
 
-  // Recherche de mise à jour au démarrage, sur la voie choisie (bêta ou normale)
-  window.electronAPI.checkForUpdates(state.settings.betaUpdates);
+  // Recherche de mise à jour au démarrage, sur la voie choisie (bêta ou normale) ; une seule fois, par la fenêtre principale
+  if (!isChannelWindow) window.electronAPI.checkForUpdates(state.settings.betaUpdates);
 
   const btnCheckUpdates = document.getElementById('btn-check-updates');
   const updateStatus = document.getElementById('update-check-status');

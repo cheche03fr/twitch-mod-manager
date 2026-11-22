@@ -8,21 +8,28 @@ const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
 const { fetchTwitchModLog } = require('./twitchModLog');
 
 let mainWindow = null;
+let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
+const channelWindows = new Map(); // identifiant de chaîne -> fenêtre ouverte sur cette chaîne
+
+// Les actions de modération vont à toutes les fenêtres : chacune garde celles de sa chaîne
+function sendToAllWindows(channel, data) {
+  BrowserWindow.getAllWindows().forEach(win => win.webContents.send(channel, data));
+}
 
 const modActionsClient = new EventSubClient({
-  onAction: (data) => mainWindow?.webContents.send('twitch:mod-action', data),
+  onAction: (data) => sendToAllWindows('twitch:mod-action', data),
   onError: (broadcasterId, message) => {
     console.error(`EventSub ${broadcasterId} :`, message);
-    mainWindow?.webContents.send('twitch:mod-actions-error', { broadcasterId, message });
+    sendToAllWindows('twitch:mod-actions-error', { broadcasterId, message });
   }
 });
 
-async function createWindow() {
+function newAppWindow() {
   const iconPath = process.platform === 'win32'
     ? path.join(__dirname, '..', 'assets', 'icon.ico')
     : path.join(__dirname, '..', 'assets', 'icon.png');
 
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1320,
     height: 870,
     minWidth: 950,
@@ -37,8 +44,30 @@ async function createWindow() {
       webviewTag: true
     }
   });
+  win.setMenuBarVisibility(false);
+  return win;
+}
 
-  mainWindow.setMenuBarVisibility(false);
+// Fenêtre supplémentaire ouverte directement sur l'écran de modération d'une chaîne
+function openChannelWindow(broadcasterId) {
+  const existing = channelWindows.get(broadcasterId);
+  if (existing && !existing.isDestroyed()) {
+    if (existing.isMinimized()) existing.restore();
+    existing.focus();
+    return;
+  }
+  const win = newAppWindow();
+  channelWindows.set(broadcasterId, win);
+  win.on('closed', () => {
+    if (channelWindows.get(broadcasterId) === win) channelWindows.delete(broadcasterId);
+  });
+  const query = `?channel=${broadcasterId}`;
+  if (appUrl) win.loadURL(`${appUrl}/${query}`);
+  else win.loadFile(path.join(__dirname, 'renderer', 'index.html'), { search: query });
+}
+
+async function createWindow() {
+  mainWindow = newAppWindow();
 
   // Supprimer les en-têtes qui empêchent l'intégration des iframes (Twitch Player & Chat),
   // uniquement pour les iframes Twitch : les autres réponses gardent leurs protections
@@ -57,9 +86,9 @@ async function createWindow() {
 
   // Démarrer le serveur local pour avoir l'origine http://localhost:3000
   // (permettant aux embeds Twitch player & chat de fonctionner sans erreur de domaine)
-  const localUrl = await localServer.start();
-  if (localUrl) {
-    mainWindow.loadURL(localUrl);
+  appUrl = await localServer.start();
+  if (appUrl) {
+    mainWindow.loadURL(appUrl);
   } else {
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
   }
@@ -113,9 +142,10 @@ if (!singleInstanceLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
+    const win = mainWindow || BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
     }
   });
 
@@ -619,6 +649,15 @@ function setupIpcHandlers() {
       }
     }
     return { version: app.getVersion(), buildDate, isPackaged: app.isPackaged };
+  });
+
+  // Ouvrir une chaîne dans sa propre fenêtre
+  ipcMain.handle('app:open-channel-window', async (event, broadcasterId) => {
+    if (!/^\d+$/.test(String(broadcasterId))) {
+      return { success: false, error: 'Identifiant de chaîne invalide' };
+    }
+    openChannelWindow(String(broadcasterId));
+    return { success: true };
   });
 
   // Ouvrir un lien externe

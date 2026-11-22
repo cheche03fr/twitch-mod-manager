@@ -1618,6 +1618,27 @@ function setupSettings() {
 
   // Recherche de mise à jour au démarrage, sur la voie choisie (bêta ou normale)
   window.electronAPI.checkForUpdates(state.settings.betaUpdates);
+
+  const btnCheckUpdates = document.getElementById('btn-check-updates');
+  const updateStatus = document.getElementById('update-check-status');
+  btnCheckUpdates.addEventListener('click', async () => {
+    btnCheckUpdates.disabled = true;
+    updateStatus.textContent = 'Recherche en cours…';
+    try {
+      const res = await window.electronAPI.checkForUpdates(state.settings.betaUpdates, true);
+      if (!res.success) {
+        updateStatus.textContent = `Recherche impossible : ${res.error}`;
+      } else if (res.updateAvailable) {
+        updateStatus.textContent = `Version ${res.version} trouvée : téléchargement en cours, l'installation vous sera proposée.`;
+      } else {
+        updateStatus.textContent = `✅ Vous avez la dernière version (${res.version}).`;
+      }
+    } catch (err) {
+      updateStatus.textContent = `Recherche impossible : ${err.message}`;
+    } finally {
+      btnCheckUpdates.disabled = false;
+    }
+  });
 }
 
 function stopAutoRefresh() {

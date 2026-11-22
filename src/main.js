@@ -137,15 +137,21 @@ if (!singleInstanceLock) {
 let autoUpdater = null;
 let promptedVersion = null;
 
-function checkForUpdates(beta) {
+/**
+ * manual = true (bouton des Paramètres) : la fenêtre d'installation est reproposée même après « Plus tard ».
+ * Renvoie { updateAvailable, version } ; lève une erreur si GitHub est injoignable.
+ */
+async function checkForUpdates(beta, manual) {
   if (!autoUpdater) {
     autoUpdater = require('electron-updater').autoUpdater;
     autoUpdater.autoInstallOnAppQuit = false; // n'installe jamais sans accord
     autoUpdater.on('update-downloaded', promptInstall);
     autoUpdater.on('error', err => console.error('Mise à jour impossible:', err.message));
   }
+  if (manual) promptedVersion = null;
   autoUpdater.allowPrerelease = beta;
-  autoUpdater.checkForUpdates().catch(err => console.error('Mise à jour impossible:', err.message));
+  const result = await autoUpdater.checkForUpdates();
+  return { updateAvailable: Boolean(result?.isUpdateAvailable), version: result?.updateInfo?.version || null };
 }
 
 async function promptInstall(info) {
@@ -540,10 +546,15 @@ function setupIpcHandlers() {
     }
   });
   // Recherche de mise à jour, voie bêta ou normale (rien en développement)
-  ipcMain.handle('app:check-updates', async (event, beta) => {
+  ipcMain.handle('app:check-updates', async (event, beta, manual) => {
     if (!app.isPackaged) return { success: false, error: 'version de développement' };
-    checkForUpdates(beta === true);
-    return { success: true };
+    try {
+      const result = await checkForUpdates(beta === true, manual === true);
+      return { success: true, ...result };
+    } catch (err) {
+      console.error('Mise à jour impossible:', err.message);
+      return { success: false, error: err.message };
+    }
   });
 
   // Infos de l'application (pied de page)

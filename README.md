@@ -20,6 +20,8 @@ La version installée et sa date sont affichées dans le pied de page, toujours 
 ### Versions bêta
 Par défaut, vous ne recevez que les versions normales. Pour tester les nouveautés en avant-première, cochez **Recevoir les versions bêta** dans les ⚙️ Paramètres : les versions bêta (par exemple `1.0.15-beta.1`) vous seront alors proposées. Décocher la case ne revient pas en arrière : vous repasserez sur la prochaine version normale.
 
+Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherche tout de suite (sur la voie bêta si la case est cochée) et indique si vous avez déjà la dernière version.
+
 ---
 
 ## 🚀 Fonctionnalités

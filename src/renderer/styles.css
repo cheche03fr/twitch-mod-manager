@@ -75,6 +75,13 @@
   line-height: 1.4;
 }
 
+.update-check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .settings-row {
   display: flex;
   flex-direction: column;

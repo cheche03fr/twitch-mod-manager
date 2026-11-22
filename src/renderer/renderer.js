@@ -881,7 +881,13 @@ async function fetchChannels() {
       updateCounters();
       renderChannels();
       startModActions();
-      if (!isTabView) renderChannelTabs(); // statut en direct des onglets
+      if (!isTabView) {
+        // Rôle de modérateur perdu : la chaîne n'est plus dans la liste, son onglet se ferme
+        channelTabs.ids
+          .filter(id => !state.channels.some(c => String(c.id) === id))
+          .forEach(closeChannelTab);
+        renderChannelTabs(); // statut en direct des onglets
+      }
       if (pendingChannelId) {
         const channel = state.channels.find(c => String(c.id) === pendingChannelId);
         pendingChannelId = null;

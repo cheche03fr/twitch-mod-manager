@@ -37,6 +37,7 @@ Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherch
   - Un point rouge signale les chaînes en direct.
   - **×** ou le **clic molette** ferme un onglet ; recliquer sur **Gérer** pour une chaîne déjà ouverte affiche son onglet et recharge son historique.
   - Ouvrir les ⚙️ Paramètres ramène à la liste des chaînes.
+  - Si vous **perdez le rôle de modérateur** sur une chaîne, son onglet se ferme à la prochaine actualisation de la liste (automatique, ou bouton 🔄).
 
 ### Écran de modération
 L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n'avez pas le droit d'utiliser n'est pas affichée (ni son panneau, ni son entrée dans le menu ＋ Panneaux).

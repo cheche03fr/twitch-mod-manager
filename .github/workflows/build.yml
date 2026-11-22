@@ -19,19 +19,21 @@ jobs:
 
       - run: npm ci
       - run: npm test
+      - run: npm run dist
 
-      # Push sur main : simple compilation de test, l'installeur est dans l'onglet Actions
-      - if: "!startsWith(github.ref, 'refs/tags/v')"
-        run: npm run dist
-
-      - if: "!startsWith(github.ref, 'refs/tags/v')"
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: twitch-mod-manager-setup
           path: dist/*.exe
 
-      # Tag v* : publie l'installeur + latest.yml dans le dépôt public des releases (mises à jour auto)
+      # Tag v* : publie installeur + latest.yml dans le dépôt public (source des mises à jour auto)
       - if: startsWith(github.ref, 'refs/tags/v')
-        run: npx electron-builder --win --publish always
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: >
+          gh release create "$GITHUB_REF_NAME"
+          dist/Twitch-Mod-Manager-Setup-*.exe dist/*.blockmap dist/latest.yml
+          --repo cheche03fr/twitch-mod-manager-releases
+          --title "Twitch Mod Manager $GITHUB_REF_NAME"
+          --notes "Installeur Windows. Les versions déjà installées se mettent à jour automatiquement."

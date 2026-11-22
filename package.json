@@ -45,6 +45,7 @@
       "releaseType": "release"
     },
     "nsis": {
+      "artifactName": "Twitch-Mod-Manager-Setup-${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     }

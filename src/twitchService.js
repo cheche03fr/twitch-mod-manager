@@ -615,7 +615,8 @@ class TwitchService {
     }
 
     result.editorStatus = editorStatusFromMarkersResponse(await this.probeStreamMarkers(token, broadcasterId));
-    result.isEditor = result.editorStatus !== 'no';
+    // Non vérifiable (aucune VOD) : traité comme non éditeur
+    result.isEditor = result.editorStatus === 'yes';
     return result;
   }
 

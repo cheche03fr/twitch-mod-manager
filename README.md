@@ -53,7 +53,8 @@ Panneau affiché seulement si vous êtes éditeur de la chaîne : modifier le **
 Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a encore **aucune VOD**, Twitch ne permet pas de le confirmer : le panneau est alors masqué, comme pour un non-éditeur.
 
 ### Prédictions
-Panneau affiché seulement sur **votre propre chaîne** (l'API Twitch réserve les prédictions au propriétaire) : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique. Sur la chaîne d'un autre streamer, utilisez l'onglet **Vue Twitch officielle**.
+- Sur **votre propre chaîne** : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique.
+- Sur la chaîne d'un **autre streamer** : l'API Twitch réserve les prédictions au propriétaire de la chaîne. Le panneau propose alors le bouton **🔮 Gérer les prédictions dans la Vue Twitch officielle**, qui ouvre la Mod View de Twitch dans l'application.
 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite :

@@ -1667,10 +1667,25 @@ async function loadPredictions(broadcasterId) {
   if (activeEl) activeEl.style.display = 'none';
   statusEl.style.display = 'block';
 
-  // L'API Twitch n'autorise les predictions que sur la chaine du compte connecte (pas pour les mods/editeurs)
+  // L'API Twitch n'autorise les predictions que sur la chaine du compte connecte (pas pour les mods/editeurs) :
+  // ailleurs, le panneau renvoie vers la Mod View Twitch, où les modérateurs peuvent les gérer
   const isOwnChannel = String(broadcasterId) === String(state.currentUser?.id);
-  showRight('predictions', isOwnChannel);
-  if (!isOwnChannel) return;
+  showRight('predictions', true);
+  ['btn-new-prediction', 'btn-refresh-predictions', 'predictions-history', 'prediction-modal']
+    .forEach(id => document.getElementById(id).classList.toggle('no-right', !isOwnChannel));
+  if (!isOwnChannel) {
+    const info = Object.assign(document.createElement('p'), {
+      className: 'card-hint',
+      textContent: "Twitch réserve la création de prédictions par l'application au streamer. Gère-les depuis la Vue Twitch officielle, comme sur le site Twitch."
+    });
+    const btn = Object.assign(document.createElement('button'), {
+      className: 'btn-primary btn-sm',
+      textContent: '🔮 Gérer les prédictions dans la Vue Twitch officielle'
+    });
+    btn.addEventListener('click', () => switchModTab('webview'));
+    statusEl.replaceChildren(info, btn);
+    return;
+  }
 
   statusEl.textContent = 'Chargement des predictions...';
 

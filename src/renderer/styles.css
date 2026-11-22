@@ -38,14 +38,7 @@
 
 .footer-author {
   color: var(--twitch-purple-light);
-  text-decoration: none;
   font-weight: 600;
-}
-
-.footer-author:hover,
-.footer-author:focus-visible {
-  color: var(--twitch-purple);
-  text-decoration: underline;
 }
 
 .footer-sep {

@@ -65,6 +65,10 @@ Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête
 ### Rôle éditeur de chaîne
 Panneau affiché seulement si vous êtes éditeur de la chaîne : modifier le **titre**, le **jeu**, les **tags**, lancer une **coupure publicitaire** et créer un **marqueur** de stream.
 
+Sur la chaîne d'un **autre streamer**, l'API officielle de Twitch réserve ces actions au propriétaire : le titre, la catégorie, les tags et les **pubs** passent alors par la session de l'onglet **Vue Twitch officielle** (il faut s'y être connecté une fois), comme le fait le Gestionnaire de stream de twitch.tv. *C'est une API interne de Twitch, non officielle, qui peut cesser de fonctionner si Twitch la modifie.*
+
+Tant que Twitch bloque les pubs (délai entre deux pubs, souvent 8 minutes), les boutons de pub sont **grisés et hachurés** et un **compte à rebours orange** indique quand la prochaine sera possible.
+
 Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a encore **aucune VOD**, Twitch ne permet pas de le confirmer : le panneau est alors masqué, comme pour un non-éditeur.
 
 ### Prédictions
@@ -86,7 +90,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
 - La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
-- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur ; elle reste dans l'application et n'est envoyée qu'à Twitch.
+- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos ou lancer une pub sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur).
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 

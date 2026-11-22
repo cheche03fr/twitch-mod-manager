@@ -1312,6 +1312,7 @@ function closeModerationScreen() {
   document.title = 'Twitch Mod Manager';
   state.currentRights = null;
   state.isEditor = false;
+  applyAdCooldown(null);
   stopUptimeCounter();
 
   dom.twitchStreamIframe.src = '';
@@ -1651,6 +1652,7 @@ async function loadEditorStatusAndInfo(channel) {
       dom.editorRoleBadge.innerText = 'Éditeur ✅';
       dom.btnSaveChannelInfo.disabled = false;
       dom.commercialButtons.forEach(b => b.disabled = false);
+      refreshAdCooldown(channel);
     } else {
       dom.editorRoleBadge.className = 'editor-badge inactive';
       dom.editorRoleBadge.innerText = 'Non éditeur';
@@ -1792,6 +1794,7 @@ async function handleSaveChannelInfo() {
     const res = await window.electronAPI.modifyChannelInfo(state.currentChannel.id, {
       title,
       game_id,
+      game_name: state.selectedGameName,
       tags
     });
 
@@ -1820,7 +1823,8 @@ async function handleTriggerCommercial(length) {
   dom.commercialFeedback.innerText = `Lancement pub (${length}s)...`;
 
   try {
-    const res = await window.electronAPI.startCommercial(state.currentChannel.id, length);
+    const channel = state.currentChannel;
+    const res = await window.electronAPI.startCommercial(channel.id, length);
     if (res.success) {
       dom.commercialFeedback.innerText = `✅ Pub de ${length}s lancée !`;
       dom.commercialFeedback.className = 'action-feedback success';
@@ -1828,10 +1832,52 @@ async function handleTriggerCommercial(length) {
       dom.commercialFeedback.innerText = `❌ ${res.error || 'Erreur pub'}`;
       dom.commercialFeedback.className = 'action-feedback error';
     }
+    setTimeout(() => refreshAdCooldown(channel), 2000); // Twitch met un instant à enregistrer la pub
+
   } catch (err) {
     dom.commercialFeedback.innerText = `Erreur : ${err.message}`;
     dom.commercialFeedback.className = 'action-feedback error';
   }
+}
+
+// Délai entre deux pubs : boutons grisés et compte à rebours tant que Twitch bloque les pubs
+let adCooldownTimer = null;
+
+async function refreshAdCooldown(channel) {
+  if (!channel) return;
+  try {
+    const res = await window.electronAPI.getAdCooldown(channel.login);
+    if (state.currentChannel?.id !== channel.id) return; // une autre chaîne a été ouverte entre-temps
+    applyAdCooldown(res.success ? res.cooldownEndsAt : null);
+  } catch (err) {
+    console.error('Délai des pubs indisponible :', err);
+  }
+}
+
+function applyAdCooldown(endsAtIso) {
+  clearInterval(adCooldownTimer);
+  adCooldownTimer = null;
+  const strip = document.querySelector('.commercial-strip');
+  const label = strip.querySelector('.commercial-label');
+  const endsAt = Date.parse(endsAtIso);
+
+  const tick = () => {
+    const remaining = Math.ceil((endsAt - Date.now()) / 1000);
+    if (!(remaining > 0)) {
+      clearInterval(adCooldownTimer);
+      adCooldownTimer = null;
+      strip.classList.remove('is-cooldown');
+      label.textContent = 'Lancer une pub :';
+      dom.commercialButtons.forEach(b => { b.disabled = !state.isEditor; b.title = ''; });
+      return;
+    }
+    const text = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`;
+    strip.classList.add('is-cooldown');
+    label.textContent = `⏳ Pub possible dans ${text}`;
+    dom.commercialButtons.forEach(b => { b.disabled = true; b.title = `Twitch impose un délai entre deux pubs (encore ${text})`; });
+  };
+  tick();
+  if (strip.classList.contains('is-cooldown')) adCooldownTimer = setInterval(tick, 1000);
 }
 
 function formatDuration(sec) {

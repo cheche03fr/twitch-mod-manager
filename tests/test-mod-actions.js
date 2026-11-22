@@ -85,4 +85,25 @@ assert.deepStrictEqual(mergeModActions(undefined, undefined), []);
 assert.ok(hasModActionsScopes(SCOPES.split(' ')), 'scopes de config suffisants');
 assert.ok(!hasModActionsScopes(['moderator:read:vips']), 'scopes incomplets détectés');
 
+// Modification de la chaîne d'un autre streamer par l'API interne de Twitch
+const { buildChannelEditOperations, buildStartAdOperation, gqlError, parseAdCooldown } = require('../src/twitchChannelEdit');
+const adJson = [{ data: { user: { adProperties: { frequency: 480, lastTriggeredAt: '2026-11-22T23:21:53Z' } } } }];
+assert.strictEqual(parseAdCooldown(adJson, Date.parse('2026-11-22T23:25:00Z')), '2026-11-22T23:29:53.000Z', 'pubs bloquées');
+assert.strictEqual(parseAdCooldown(adJson, Date.parse('2026-11-22T23:30:00Z')), null, 'délai écoulé');
+assert.strictEqual(parseAdCooldown([{ data: { user: { adProperties: { frequency: 480, lastTriggeredAt: null } } } }]), null, 'aucune pub passée');
+assert.deepStrictEqual(buildStartAdOperation(143330248, '60', 'abc').variables.input, {
+  channelID: '143330248', lengthSeconds: 60, trigger: 'QUICK_ACTION', commercialID: 'abc'
+});
+assert.throws(() => buildStartAdOperation(143330248, 45, 'abc'), /Durée de pub invalide/);
+const [settingsOp, tagsOp] = buildChannelEditOperations({
+  broadcasterId: 143330248, title: 'Titre', gameId: '1478650472', gameName: 'Jeu', language: 'fr', tags: ['fr', 'fun']
+});
+assert.deepStrictEqual(settingsOp.variables.input, {
+  broadcasterLanguage: 'fr', game: 'Jeu', categoryID: '1478650472', status: 'Titre', userID: '143330248'
+});
+assert.deepStrictEqual(tagsOp.variables.input, { contentID: '143330248', contentType: 'CHANNEL', freeformTagNames: ['fr', 'fun'] });
+assert.strictEqual(gqlError([{ data: { updateBroadcastSettings: { error: null } } }, { data: {} }]), null, 'succès');
+assert.strictEqual(gqlError([{ errors: [{ message: 'service error' }] }]), 'service error', 'erreur globale');
+assert.strictEqual(gqlError([{ data: { updateFreeformTags: { error: { code: 'TAG_INVALID' } } } }]), 'TAG_INVALID', 'erreur de mutation');
+
 console.log('✅ Actions de modération OK');

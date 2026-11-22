@@ -61,12 +61,13 @@ function parseModActionLogs(json) {
 }
 
 /**
- * Charge l'historique avec la session twitch.tv de la Vue Twitch officielle (le jeton ne quitte pas le processus principal).
+ * Envoie des requêtes persistées [{ operationName, variables, hash }] avec la session twitch.tv de la Vue Twitch officielle
+ * (le jeton ne quitte pas le processus principal). Renvoie { needsWebLogin: true } sans session, sinon { json }.
  */
-async function fetchTwitchModLog(electronSession, broadcasterId) {
+async function postTwitchGql(electronSession, operations) {
   const [cookie] = await electronSession.fromPartition(MOD_VIEW_PARTITION)
     .cookies.get({ name: 'auth-token', domain: 'twitch.tv' });
-  if (!cookie?.value) return { success: false, needsWebLogin: true };
+  if (!cookie?.value) return { needsWebLogin: true };
 
   const response = await fetch(GQL_URL, {
     method: 'POST',
@@ -75,15 +76,28 @@ async function fetchTwitchModLog(electronSession, broadcasterId) {
       Authorization: `OAuth ${cookie.value}`,
       'Accept-Language': 'fr-FR'
     },
-    body: JSON.stringify([{
-      operationName: 'ModActionsList',
-      variables: { channelID: String(broadcasterId) },
-      extensions: { persistedQuery: { version: 1, sha256Hash: MOD_ACTIONS_LIST_HASH } }
-    }])
+    body: JSON.stringify(operations.map(({ operationName, variables, hash }) => ({
+      operationName,
+      variables,
+      extensions: { persistedQuery: { version: 1, sha256Hash: hash } }
+    })))
   });
-  if (response.status === 401) return { success: false, needsWebLogin: true };
+  if (response.status === 401) return { needsWebLogin: true };
   if (!response.ok) throw new Error(`Twitch a répondu ${response.status}`);
-  return { success: true, entries: parseModActionLogs(await response.json()) };
+  return { json: await response.json() };
 }
 
-module.exports = { parseModActionLogs, fetchTwitchModLog };
+/**
+ * Charge l'historique des actions de modération d'une chaîne.
+ */
+async function fetchTwitchModLog(electronSession, broadcasterId) {
+  const { needsWebLogin, json } = await postTwitchGql(electronSession, [{
+    operationName: 'ModActionsList',
+    variables: { channelID: String(broadcasterId) },
+    hash: MOD_ACTIONS_LIST_HASH
+  }]);
+  if (needsWebLogin) return { success: false, needsWebLogin: true };
+  return { success: true, entries: parseModActionLogs(json) };
+}
+
+module.exports = { parseModActionLogs, fetchTwitchModLog, postTwitchGql };

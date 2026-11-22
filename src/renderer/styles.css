@@ -1494,10 +1494,20 @@ button {
   cursor: pointer;
   transition: var(--transition);
 }
-.btn-commercial:hover {
+.btn-commercial:hover:not(:disabled) {
   background: var(--twitch-purple);
   border-color: var(--twitch-purple);
   color: #fff;
+}
+.btn-commercial:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Délai entre deux pubs : boutons hachurés, compte à rebours en orange */
+.commercial-strip.is-cooldown .commercial-label { color: #f5a623; font-weight: 700; font-variant-numeric: tabular-nums; }
+.commercial-strip.is-cooldown .btn-commercial {
+  opacity: 1;
+  color: var(--text-muted);
+  border-style: dashed;
+  background: repeating-linear-gradient(135deg, var(--bg-tertiary) 0 6px, transparent 6px 12px);
 }
 
 /* ========================================================

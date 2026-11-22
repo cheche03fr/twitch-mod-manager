@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   modifyChannelInfo: (broadcasterId, data) => ipcRenderer.invoke('twitch:modify-channel-info', broadcasterId, data),
   searchCategories: (query) => ipcRenderer.invoke('twitch:search-categories', query),
   startCommercial: (broadcasterId, length) => ipcRenderer.invoke('twitch:start-commercial', broadcasterId, length),
+  getAdCooldown: (login) => ipcRenderer.invoke('twitch:get-ad-cooldown', login),
   createStreamMarker: (broadcasterId, description) => ipcRenderer.invoke('twitch:create-stream-marker', broadcasterId, description),
   // Predictions
   getPredictions: (broadcasterId) => ipcRenderer.invoke('twitch:get-predictions', broadcasterId),

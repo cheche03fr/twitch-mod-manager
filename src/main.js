@@ -6,6 +6,7 @@ const localServer = require('./localServer');
 const { PORT } = require('./config');
 const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
 const { fetchTwitchModLog } = require('./twitchModLog');
+const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
 
 let mainWindow = null;
 let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
@@ -574,9 +575,29 @@ function setupIpcHandlers() {
       return { success: false, error: 'Non authentifié' };
     }
 
+    if (!/^\d+$/.test(String(broadcasterId))) {
+      return { success: false, error: 'Identifiant de chaîne invalide' };
+    }
+
     try {
-      await TwitchService.modifyChannelInfo(sessionData.token, broadcasterId, data);
-      return { success: true };
+      if (String(broadcasterId) === String(sessionData.userId)) {
+        await TwitchService.modifyChannelInfo(sessionData.token, broadcasterId, data);
+        return { success: true };
+      }
+      // Chaîne d'un autre : l'API officielle refuse les éditeurs, on passe par la session de la Vue Twitch officielle
+      const info = await TwitchService.getChannelInfo(sessionData.token, broadcasterId);
+      const result = await updateChannelViaWeb(session, {
+        broadcasterId,
+        title: String(data?.title ?? info?.title ?? ''),
+        gameId: String(data?.game_id ?? info?.game_id ?? ''),
+        gameName: String(data?.game_name ?? info?.game_name ?? ''),
+        language: info?.broadcaster_language || 'fr',
+        tags: Array.isArray(data?.tags) ? data.tags.map(String) : (info?.tags || [])
+      });
+      if (result.needsWebLogin) {
+        return { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour modifier la chaîne d\'un autre streamer.' };
+      }
+      return result;
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -604,9 +625,33 @@ function setupIpcHandlers() {
       return { success: false, error: 'Non authentifié' };
     }
 
+    if (!/^\d+$/.test(String(broadcasterId))) {
+      return { success: false, error: 'Identifiant de chaîne invalide' };
+    }
+
     try {
+      if (String(broadcasterId) !== String(sessionData.userId)) {
+        // Chaîne d'un autre : l'API officielle refuse les éditeurs, on passe par la session de la Vue Twitch officielle
+        const result = await startAdViaWeb(session, broadcasterId, length);
+        if (result.needsWebLogin) {
+          return { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour lancer une pub sur la chaîne d\'un autre streamer.' };
+        }
+        return result;
+      }
       const res = await TwitchService.startCommercial(sessionData.token, broadcasterId, length);
       return { success: true, result: res };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Délai avant la prochaine pub possible (session de la Vue Twitch officielle)
+  ipcMain.handle('twitch:get-ad-cooldown', async (event, login) => {
+    if (!/^[a-zA-Z0-9_]{1,25}$/.test(String(login))) {
+      return { success: false, error: 'Pseudo de chaîne invalide' };
+    }
+    try {
+      return await fetchAdCooldown(session, String(login).toLowerCase());
     } catch (err) {
       return { success: false, error: err.message };
     }

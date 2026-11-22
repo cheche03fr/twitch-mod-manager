@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateChatSettings: (broadcasterId, settings) => ipcRenderer.invoke('twitch:update-chat-settings', broadcasterId, settings),
   getChatters: (broadcasterId) => ipcRenderer.invoke('twitch:get-chatters', broadcasterId),
   banUser: (broadcasterId, data) => ipcRenderer.invoke('twitch:ban-user', broadcasterId, data),
+  unbanUser: (broadcasterId, targetUser) => ipcRenderer.invoke('twitch:unban-user', broadcasterId, targetUser),
   clearChat: (broadcasterId) => ipcRenderer.invoke('twitch:clear-chat', broadcasterId),
   toggleShieldMode: (broadcasterId, isActive) => ipcRenderer.invoke('twitch:toggle-shield-mode', broadcasterId, isActive),
   resolveUser: (login) => ipcRenderer.invoke('twitch:resolve-user', login),

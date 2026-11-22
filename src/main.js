@@ -180,6 +180,15 @@ app.on('window-all-closed', () => {
 /**
  * Configuration de la communication IPC sécurisée
  */
+// Pseudo (avec ou sans @) ou identifiant numérique -> identifiant Twitch, null si introuvable
+async function resolveTargetUserId(token, targetUser) {
+  const value = String(targetUser || '').trim().replace(/^@/, '');
+  if (!value) return null;
+  if (/^\d+$/.test(value)) return value;
+  const user = await TwitchService.getUserByLogin(token, value);
+  return user ? user.id : null;
+}
+
 function setupIpcHandlers() {
   // 1. Vérification de la session
   ipcMain.handle('auth:check-session', async () => {
@@ -373,13 +382,9 @@ function setupIpcHandlers() {
     }
 
     try {
-      let targetUserId = targetUser;
-      if (!/^\d+$/.test(targetUser)) {
-        const user = await TwitchService.getUserByLogin(sessionData.token, targetUser);
-        if (!user) {
-          return { success: false, error: `Utilisateur "${targetUser}" introuvable sur Twitch.` };
-        }
-        targetUserId = user.id;
+      const targetUserId = await resolveTargetUserId(sessionData.token, targetUser);
+      if (!targetUserId) {
+        return { success: false, error: `Utilisateur "${targetUser}" introuvable sur Twitch.` };
       }
 
       const result = await TwitchService.banOrTimeoutUser(sessionData.token, broadcasterId, sessionData.userId, {
@@ -390,6 +395,30 @@ function setupIpcHandlers() {
 
       return { success: true, result };
     } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // 8 bis. Levée d'un ban ou d'un timeout
+  ipcMain.handle('twitch:unban-user', async (event, broadcasterId, targetUser) => {
+    const sessionData = AuthManager.getSession();
+    if (!sessionData || !sessionData.token || !sessionData.userId) {
+      return { success: false, error: 'Non authentifié' };
+    }
+    if (!/^\d+$/.test(String(broadcasterId))) {
+      return { success: false, error: 'Identifiant de chaîne invalide' };
+    }
+
+    try {
+      const targetUserId = await resolveTargetUserId(sessionData.token, targetUser);
+      if (!targetUserId) {
+        return { success: false, error: `Utilisateur "${targetUser}" introuvable sur Twitch.` };
+      }
+      await TwitchService.unbanUser(sessionData.token, broadcasterId, sessionData.userId, targetUserId);
+      return { success: true };
+    } catch (err) {
+      // 400 : la personne n'est ni bannie ni exclue sur cette chaîne
+      if (/\(400\)/.test(err.message)) return { success: false, error: 'Cette personne n\'est ni bannie ni exclue sur cette chaîne.' };
       return { success: false, error: err.message };
     }
   });

@@ -113,6 +113,7 @@ const dom = {
   durationPresets: document.querySelectorAll('.preset-btn'),
   banReasonInput: document.getElementById('ban-reason-input'),
   btnApplySanction: document.getElementById('btn-apply-sanction'),
+  btnUnban: document.getElementById('btn-unban'),
   banFeedback: document.getElementById('ban-feedback'),
   toggleSlowMode: document.getElementById('toggle-slow-mode'),
   toggleSubMode: document.getElementById('toggle-sub-mode'),
@@ -269,6 +270,7 @@ function setupEventListeners() {
   });
 
   dom.btnApplySanction.addEventListener('click', applySanction);
+  dom.btnUnban.addEventListener('click', unbanTarget);
 
   // Contrôles du chat
   dom.toggleSlowMode.addEventListener('change', (e) => updateChatSetting({ slow_mode: e.target.checked, slow_mode_wait_time: 3 }));
@@ -1284,7 +1286,42 @@ function adaptBanForm(canBan) {
   dom.banUserInput.disabled = !canBan;
   dom.banReasonInput.disabled = !canBan;
   dom.btnApplySanction.disabled = !canBan;
+  dom.btnUnban.disabled = !canBan;
   dom.durationPresets.forEach(btn => btn.disabled = !canBan);
+}
+
+/**
+ * Lève le ban ou l'exclusion du pseudo saisi
+ */
+async function unbanTarget() {
+  if (!state.currentChannel) return;
+  const targetUser = dom.banUserInput.value.trim().replace(/^@/, '');
+  if (!targetUser) {
+    dom.banFeedback.innerText = 'Veuillez saisir un pseudo.';
+    dom.banFeedback.className = 'action-feedback error';
+    dom.banUserInput.focus();
+    return;
+  }
+
+  dom.btnUnban.disabled = true;
+  dom.banFeedback.innerText = 'Débannissement...';
+  dom.banFeedback.className = 'action-feedback';
+  try {
+    const res = await window.electronAPI.unbanUser(state.currentChannel.id, targetUser);
+    if (res.success) {
+      dom.banFeedback.innerText = `✅ @${targetUser} débanni.`;
+      dom.banFeedback.className = 'action-feedback success';
+      dom.banUserInput.value = '';
+    } else {
+      dom.banFeedback.innerText = `❌ ${res.error || 'Erreur débannissement'}`;
+      dom.banFeedback.className = 'action-feedback error';
+    }
+  } catch (err) {
+    dom.banFeedback.innerText = `Erreur : ${err.message}`;
+    dom.banFeedback.className = 'action-feedback error';
+  } finally {
+    dom.btnUnban.disabled = false;
+  }
 }
 
 function adaptChatControls(canManage, settings) {

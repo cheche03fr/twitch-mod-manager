@@ -13,8 +13,9 @@
     "moderation",
     "electron"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "cheche03fr",
+  "license": "UNLICENSED",
+  "private": true,
   "devDependencies": {
     "electron": "^35.0.0",
     "electron-builder": "^26.18.0"
@@ -37,6 +38,7 @@
         "portable"
       ]
     },
+    "copyright": "Copyright (c) 2026 cheche03fr. Tous droits réservés.",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true

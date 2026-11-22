@@ -36,6 +36,8 @@ Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherch
 ### Écran de modération
 L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n'avez pas le droit d'utiliser n'est pas affichée (ni son panneau, ni son entrée dans le menu ＋ Panneaux).
 
+La ligne **Droits actifs sur cette chaîne** affiche chaque droit en **vert ✅** s'il est autorisé et en **rouge ❌** sinon.
+
 Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête** ; leur taille, leur ordre et leur affichage sont enregistrés.
 
 - **Stream et chat intégrés** côte à côte.

@@ -154,7 +154,8 @@ const dom = {
   rightPillBans: document.getElementById('right-pill-bans'),
   rightPillChat: document.getElementById('right-pill-chat'),
   rightPillChatters: document.getElementById('right-pill-chatters'),
-  rightPillShield: document.getElementById('right-pill-shield')
+  rightPillShield: document.getElementById('right-pill-shield'),
+  rightPillEditor: document.getElementById('right-pill-editor')
 };
 
 // Initialisation au chargement de la page
@@ -1150,7 +1151,7 @@ function showRight(right, allowed) {
 
 function updateRightPill(pill, isAllowed, label) {
   pill.className = `right-pill ${isAllowed ? 'active' : 'inactive'}`;
-  pill.innerHTML = `${label} : ${isAllowed ? '✅' : '⚠️'}`;
+  pill.textContent = `${label} : ${isAllowed ? '✅' : '❌'}`;
 }
 
 function adaptBanForm(canBan) {
@@ -1351,6 +1352,7 @@ async function loadEditorStatusAndInfo(channel) {
     const res = await window.electronAPI.checkEditorRights(channel.id);
     state.isEditor = Boolean(res.isEditor);
     showRight('editor', state.isEditor);
+    updateRightPill(dom.rightPillEditor, state.isEditor, '✏️ Éditeur');
 
     if (state.isEditor) {
       dom.editorRoleBadge.className = 'editor-badge active';
@@ -1368,6 +1370,7 @@ async function loadEditorStatusAndInfo(channel) {
       applyChannelInfoToForm(res.channelInfo);
     }
   } catch (err) {
+    updateRightPill(dom.rightPillEditor, false, '✏️ Éditeur');
     console.error('Erreur statut éditeur:', err);
   }
 }

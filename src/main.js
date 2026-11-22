@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, shell, session } = require('electron');
+﻿const { app, BrowserWindow, ipcMain, shell, session, dialog } = require('electron');
 const path = require('path');
 const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
@@ -79,16 +79,37 @@ if (!singleInstanceLock) {
     setupIpcHandlers();
     await createWindow();
 
-    // Mise à jour auto depuis cheche03fr/twitch-mod-manager-releases : télécharge en fond, installe à la fermeture
-    if (app.isPackaged) {
-      const { autoUpdater } = require('electron-updater');
-      autoUpdater.checkForUpdatesAndNotify().catch(err => console.error('Mise à jour impossible:', err.message));
-    }
+    if (app.isPackaged) setupAutoUpdate();
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) await createWindow();
     });
   });
+}
+
+/**
+ * Mise à jour depuis cheche03fr/twitch-mod-manager-releases :
+ * téléchargement en fond, puis une fenêtre demande si on installe.
+ */
+function setupAutoUpdate() {
+  const { autoUpdater } = require('electron-updater');
+  autoUpdater.autoInstallOnAppQuit = false; // n'installe jamais sans accord
+
+  autoUpdater.on('update-downloaded', async (info) => {
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Mise à jour disponible',
+      message: `La version ${info.version} de Twitch Mod Manager est disponible.`,
+      detail: `Version actuelle : ${app.getVersion()}\n\nVoulez-vous l'installer maintenant ? L'application va redémarrer.`,
+      buttons: ['Installer maintenant', 'Plus tard'],
+      defaultId: 0,
+      cancelId: 1
+    });
+    if (response === 0) autoUpdater.quitAndInstall();
+  });
+
+  autoUpdater.on('error', err => console.error('Mise à jour impossible:', err.message));
+  autoUpdater.checkForUpdates().catch(err => console.error('Mise à jour impossible:', err.message));
 }
 
 app.on('window-all-closed', () => {

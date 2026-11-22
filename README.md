@@ -1,43 +1,72 @@
 # Twitch Mod Manager 🛡️
 
-Application de bureau moderne pour afficher, surveiller et gérer l'ensemble des chaînes Twitch dont vous êtes modérateur.
+Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, toutes les chaînes Twitch où vous êtes modérateur.
+
+---
+
+## 📥 Installation
+
+1. Téléchargez **`Twitch-Mod-Manager-Setup-x.y.z.exe`** depuis la [dernière version](https://github.com/cheche03fr/twitch-mod-manager/releases/latest).
+2. Lancez l'installeur et choisissez le dossier d'installation.
+   *Si Windows SmartScreen affiche « Windows a protégé votre ordinateur », cliquez sur **Informations complémentaires** puis **Exécuter quand même** : l'installeur est signé par `cheche03fr` avec un certificat personnel, non reconnu par défaut.*
+3. Ouvrez l'application, cliquez sur **Se connecter avec Twitch** et autorisez l'accès dans votre navigateur.
+
+### Mises à jour automatiques
+
+Au démarrage, l'application vérifie s'il existe une nouvelle version et la télécharge en arrière-plan. Une fenêtre vous propose alors **Installer maintenant** ou **Plus tard** : rien n'est installé sans votre accord.
+
+La version installée et sa date sont affichées en bas de la fenêtre.
 
 ---
 
 ## 🚀 Fonctionnalités
 
-- **Détection automatique** : Récupère la liste complète de toutes les chaînes où vous avez le rôle de modérateur via l'API officielle Twitch (`/helix/moderation/channels`).
-- **Statut en direct en temps réel** :
-  - Détecte instantanément si une chaîne est **EN DIRECT (LIVE)** ou hors-ligne.
-  - Affiche le titre du live, le jeu / catégorie en cours, le nombre de spectateurs en direct et l'avatar du streamer.
-- **Accès rapide en 1 clic** :
-  - Bouton **Modérer** : Ouvre directement le *Gestionnaire de modération* Twitch (`https://www.twitch.tv/moderator/<chaine>`).
-  - Bouton **Stream** : Ouvre le lecteur du stream sur Twitch.
-  - Bouton **Chat** : Ouvre la fenêtre de chat détachée (*popout*).
-- **Filtres et recherche instantanée** :
-  - Filtres par statut : *Toutes*, *En direct*, *Hors ligne*.
-  - Recherche instantanée par nom de chaîne ou par jeu.
-  - Tri par : *En direct d'abord*, *Spectateurs*, *Nom alphabétique*.
-- **Actualisation automatique** :
-  - Rafraîchit les statuts toutes les 60 secondes (activable/désactivable d'un clic).
-- **Connexion sécurisée (OAuth)** :
-  - Authentification officielle Twitch avec le scope `user:read:moderated_channels`.
-  - Vos identifiants et mots de passe ne sont jamais saisis dans l'application (l'autorisation se fait directement via votre navigateur par défaut).
+### Vos chaînes modérées
+- **Détection automatique** de toutes les chaînes où vous êtes modérateur.
+- **Statut en direct** : titre du live, jeu, nombre de spectateurs et avatar du streamer.
+- **Recherche** par chaîne ou par jeu, **filtres** *Toutes / En direct / Hors ligne*, **tri** *En direct d'abord / Spectateurs / Nom (A-Z, Z-A)*.
+- **Actualisation automatique** toutes les 60 secondes (désactivable).
+- Boutons rapides : **Gérer** (écran de modération), **Stream** et **Chat** (*popout*) sur Twitch.
+
+### Écran de modération
+- **Stream et chat intégrés** côte à côte.
+- **Sanctions** : timeout ou ban d'un pseudo, avec motif.
+- **Purge du chat** et **mode bouclier**.
+- **Paramètres du chat** : mode lent, abonnés, émotes uniquement, followers.
+- **Liste des spectateurs** présents dans le chat, avec recherche.
+- **Journal des actions** de la session, filtrable.
+- Onglet **Vue Twitch officielle** : la Mod View de Twitch directement dans l'application.
+
+### Rôle éditeur de chaîne
+Si vous êtes aussi éditeur de la chaîne : modifier le **titre**, le **jeu**, les **tags**, lancer une **coupure publicitaire** et créer un **marqueur** de stream.
+
+### Prédictions
+- Sur **votre propre chaîne** : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique.
+- Sur la chaîne d'un **autre streamer** : l'API Twitch réserve les prédictions au propriétaire de la chaîne. L'application propose alors un bouton qui ouvre les prédictions dans la Mod View de Twitch.
 
 ---
 
-## 🏁 Comment lancer l'application
+## 🔐 Sécurité et vie privée
 
-1. Double-cliquez simplement sur le fichier **`Lancer.bat`** présent dans ce dossier.
-   *(Ou ouvrez un terminal dans ce dossier et tapez : `npm start`)*
-2. Sur l'écran d'accueil, cliquez sur **Se connecter avec Twitch**.
-3. Votre navigateur habituel s'ouvre sur la page Twitch pour autoriser l'accès.
-4. Cliquez sur **Autoriser** : l'application se connecte automatiquement et affiche l'ensemble de vos chaînes !
+- **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
+- La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
+- L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions.
 
 ---
 
-## ⚙️ Configuration Twitch Developer
+## 🧑‍💻 Développement (propriétaire uniquement)
 
-Si vous souhaitez modifier l'application ou utiliser un autre Client ID :
-- Le fichier de configuration se trouve dans [`src/config.js`](file:///c:/Users/cheche/Antigravity/gestion%20de%20moderation/src/config.js).
-- Assurez-vous que l'URL de redirection `http://localhost:3000/callback` est bien enregistrée dans les paramètres de votre application sur [Twitch Developer Console](https://dev.twitch.tv/console/apps).
+```powershell
+npm install
+npm start        # ou double-clic sur Lancer.bat
+npm test
+```
+
+Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile, signe l'installeur et crée la release ; les applications installées se mettent à jour automatiquement.
+
+---
+
+## 📄 Licence
+
+Copyright © 2026 cheche03fr. **Tous droits réservés.**
+Le code est visible publiquement mais ne peut être ni copié, ni modifié, ni redistribué sans autorisation écrite. Voir [LICENSE](LICENSE).

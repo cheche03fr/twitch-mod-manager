@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; frame-src https://player.twitch.tv https://www.twitch.tv; connect-src 'self'; object-src 'none'; base-uri 'none'">
   <title>Twitch Mod Manager</title>
   <link rel="icon" type="image/png" href="../../assets/icon.png">
   <link rel="stylesheet" href="styles.css">
@@ -12,7 +13,7 @@
   <header class="app-header">
     <div class="header-brand">
       <div class="logo-icon">
-        <img src="../../assets/icon.png" alt="Marteau de modération" width="28" height="28" onerror="this.style.display='none'">
+        <img src="../../assets/icon.png" alt="Marteau de modération" width="28" height="28">
       </div>
       <div>
         <h1 class="app-title">Twitch Mod Manager</h1>

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 const { app, shell } = require('electron');
 const { CLIENT_ID, REDIRECT_URI, SCOPES } = require('./config');
@@ -43,9 +44,12 @@ class AuthManager {
   }
 
   static async startOAuthFlow() {
-    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&force_verify=true`;
+    // state aléatoire : seul le retour de Twitch le connaît, un autre site ne peut pas injecter son jeton
+    const state = crypto.randomBytes(16).toString('hex');
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&force_verify=true&state=${state}`;
+    const tokenPromise = localServer.waitForToken(state);
     shell.openExternal(authUrl);
-    return await localServer.waitForToken();
+    return await tokenPromise;
   }
 }
 

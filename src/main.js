@@ -3,6 +3,7 @@ const path = require('path');
 const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
 const localServer = require('./localServer');
+const { PORT } = require('./config');
 
 let mainWindow = null;
 
@@ -29,8 +30,13 @@ async function createWindow() {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // Supprimer les en-têtes qui empêchent l'intégration des iframes (Twitch Player & Chat)
+  // Supprimer les en-têtes qui empêchent l'intégration des iframes (Twitch Player & Chat),
+  // uniquement pour les iframes Twitch : les autres réponses gardent leurs protections
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    if (details.resourceType !== 'subFrame' || !isTwitchUrl(details.url)) {
+      callback({});
+      return;
+    }
     const responseHeaders = Object.assign({}, details.responseHeaders);
     delete responseHeaders['x-frame-options'];
     delete responseHeaders['X-Frame-Options'];
@@ -61,7 +67,35 @@ app.on('web-contents-created', (event, contents) => {
     }
     return { action: 'deny' };
   });
+
+  // La fenêtre principale (qui a accès à electronAPI) ne doit jamais quitter l'app
+  if (contents.getType() === 'window') {
+    contents.on('will-navigate', (e, url) => {
+      if (!isAppUrl(url)) e.preventDefault();
+    });
+  }
+
+  // La webview (Mod View Twitch) n'a jamais de preload ni d'accès Node
+  contents.on('will-attach-webview', (e, webPreferences, params) => {
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    if (params.src && params.src !== 'about:blank' && !isTwitchUrl(params.src)) e.preventDefault();
+  });
 });
+
+function isAppUrl(url) {
+  return url.startsWith(`http://localhost:${PORT}/`) || url.startsWith('file://');
+}
+
+function isTwitchUrl(url) {
+  try {
+    const { protocol, hostname } = new URL(url);
+    return protocol === 'https:' && (hostname === 'twitch.tv' || hostname.endsWith('.twitch.tv'));
+  } catch {
+    return false;
+  }
+}
 
 // Verrou d'instance unique pour éviter les conflits de processus et de cache
 const singleInstanceLock = app.requestSingleInstanceLock();

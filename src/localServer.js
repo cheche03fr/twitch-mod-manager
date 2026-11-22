@@ -20,9 +20,10 @@ class LocalServer {
     this.server = null;
     this.tokenResolve = null;
     this.tokenReject = null;
+    this.expectedState = null;
   }
 
-  start() {
+  start(port = PORT) { // port modifiable pour les tests
     return new Promise((resolve, reject) => {
       this.server = http.createServer((req, res) => {
         const reqUrl = new URL(req.url, `http://localhost:${PORT}`);
@@ -70,9 +71,11 @@ class LocalServer {
                 if (hash) {
                   const params = new URLSearchParams(hash);
                   const token = params.get('access_token');
+                  const state = params.get('state') || '';
                   if (token) {
-                    fetch('/save-token?access_token=' + encodeURIComponent(token))
-                      .then(() => {
+                    fetch('/save-token?access_token=' + encodeURIComponent(token) + '&state=' + encodeURIComponent(state))
+                      .then(r => {
+                        if (!r.ok) throw new Error('jeton refusé, relancez la connexion depuis l\\'application');
                         document.getElementById('msg').innerText = 'Connecté ! Vous pouvez fermer cet onglet.';
                         setTimeout(() => window.close(), 1500);
                       })
@@ -91,11 +94,16 @@ class LocalServer {
         // 2. Route Réception du jeton
         if (reqUrl.pathname === '/save-token') {
           const token = reqUrl.searchParams.get('access_token');
-          if (token && this.tokenResolve) {
-            this.tokenResolve(token);
-            this.tokenResolve = null;
-            this.tokenReject = null;
+          const state = reqUrl.searchParams.get('state');
+          if (!token || !this.tokenResolve || !this.expectedState || state !== this.expectedState) {
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'refused' }));
+            return;
           }
+          this.tokenResolve(token);
+          this.tokenResolve = null;
+          this.tokenReject = null;
+          this.expectedState = null;
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'ok' }));
           return;
@@ -122,28 +130,30 @@ class LocalServer {
         }
       });
 
-      this.server.listen(PORT, '127.0.0.1', () => {
-        console.log(`Serveur local actif sur http://localhost:${PORT}`);
-        resolve(`http://localhost:${PORT}`);
+      this.server.listen(port, '127.0.0.1', () => {
+        console.log(`Serveur local actif sur http://localhost:${port}`);
+        resolve(`http://localhost:${port}`);
       });
 
       this.server.on('error', (err) => {
-        console.warn(`Erreur serveur local sur le port ${PORT}: ${err.message}`);
+        console.warn(`Erreur serveur local sur le port ${port}: ${err.message}`);
         resolve(null);
       });
     });
   }
 
-  waitForToken(timeoutMs = 180000) {
+  waitForToken(expectedState, timeoutMs = 180000) {
     return new Promise((resolve, reject) => {
       this.tokenResolve = resolve;
       this.tokenReject = reject;
+      this.expectedState = expectedState;
 
       setTimeout(() => {
-        if (this.tokenReject) {
+        if (this.tokenReject && this.tokenReject === reject) {
           this.tokenReject(new Error('Délai d\'authentification dépassé (3 minutes).'));
           this.tokenResolve = null;
           this.tokenReject = null;
+          this.expectedState = null;
         }
       }, timeoutMs);
     });

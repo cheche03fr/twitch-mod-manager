@@ -39,6 +39,11 @@ L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n
 La ligne **Droits actifs sur cette chaîne** affiche chaque droit en **vert ✅** s'il est autorisé et en **rouge ❌** sinon.
 
 Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête** ; leur taille, leur ordre et leur affichage sont enregistrés.
+- **Placement libre** : posez un panneau **n'importe où dans la grille, tant qu'il y a la place**, même en laissant des espaces vides. Pendant le déplacement, un cadre montre l'emplacement : **violet** s'il est libre, **rouge** s'il est occupé (le panneau ne bouge pas si vous le lâchez là).
+- Un panneau qui s'agrandit ou s'élargit repousse vers le bas ceux qu'il chevauche.
+- Le panneau tenu **suit la souris** ; la **molette** fait défiler la page pendant le déplacement pour l'emmener plus bas ou plus haut.
+- Le déplacement fonctionne aussi au-dessus du stream et du chat intégrés ; **Échap** annule le déplacement.
+- Dans une fenêtre étroite (moins de 1100 px), les panneaux s'empilent sur toute la largeur.
 
 - **Stream et chat intégrés** côte à côte.
 - **Sanctions** : timeout ou ban d'un pseudo, avec motif.

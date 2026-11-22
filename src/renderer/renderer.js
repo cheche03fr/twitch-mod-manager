@@ -29,7 +29,7 @@ const state = {
   uptimeInterval: null,
 
   // Drag and drop
-  draggedWidgetId: null
+  panelDrag: null
 };
 
 // Références du DOM
@@ -421,6 +421,7 @@ function setupGridCustomization() {
         // Supprimer toutes les anciennes classes de col-span
         widget.classList.remove('col-span-3', 'col-span-4', 'col-span-5', 'col-span-6', 'col-span-7', 'col-span-8', 'col-span-12');
         widget.classList.add(newSize);
+        layoutGrid(widget.id); // le style en ligne fixe la largeur : le ResizeObserver ne verrait rien
         saveGridLayout();
       });
     });
@@ -447,69 +448,162 @@ function setupGridCustomization() {
     }
 
     // ==========================================
-    // Glisser-Déposer (Drag & Drop natif HTML5)
+    // Déplacement à la souris (pas de glisser-déposer natif : il bloque la molette)
     // ==========================================
-    // Le panneau ne se déplace qu'en le prenant par son en-tête (hors boutons)
-    widget.draggable = false;
+    // Le panneau se prend par son en-tête (hors boutons) et suit la souris, molette comprise
     const header = widget.querySelector('.widget-header');
-    header.addEventListener('mousedown', (e) => {
-      widget.draggable = !e.target.closest('button, input, a, select');
-    });
-    document.addEventListener('mouseup', () => { widget.draggable = false; });
-
-    widget.addEventListener('dragstart', (e) => {
-      state.draggedWidgetId = widget.id;
-      widget.classList.add('is-dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', widget.id);
-    });
-
-    widget.addEventListener('dragend', () => {
-      widget.draggable = false; // pas de mouseup après un glisser-déposer
-      state.draggedWidgetId = null;
-      widgets.forEach(w => {
-        w.classList.remove('is-dragging', 'drag-over');
-      });
-      saveGridLayout();
-    });
-
-    widget.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      if (state.draggedWidgetId && state.draggedWidgetId !== widget.id) {
-        widget.classList.add('drag-over');
-      }
-    });
-
-    widget.addEventListener('dragleave', () => {
-      widget.classList.remove('drag-over');
-    });
-
-    widget.addEventListener('drop', (e) => {
-      e.preventDefault();
-      widget.classList.remove('drag-over');
-
-      const draggedId = state.draggedWidgetId;
-      if (!draggedId || draggedId === widget.id) return;
-
-      const draggedEl = document.getElementById(draggedId);
-      if (!draggedEl) return;
-
-      // Déterminer s'il faut insérer avant ou après
+    header.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || isNarrowGrid() || e.target.closest('button, input, a, select')) return;
       const rect = widget.getBoundingClientRect();
-      const midPoint = rect.top + rect.height / 2;
-      if (e.clientY < midPoint) {
-        dom.modCustomGrid.insertBefore(draggedEl, widget);
-      } else {
-        dom.modCustomGrid.insertBefore(draggedEl, widget.nextSibling);
-      }
-
-      saveGridLayout();
+      const grid = dom.modCustomGrid.getBoundingClientRect();
+      header.setPointerCapture(e.pointerId); // les iframes (stream, chat) n'avalent plus la souris
+      state.panelDrag = {
+        widget, started: false,
+        startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY,
+        grab: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        natural: { x: rect.left - grid.left, y: rect.top - grid.top }
+      };
     });
   });
 
+  // Emplacement visé : contour violet s'il est libre, rouge sinon
+  const dropGhost = Object.assign(document.createElement('div'), { className: 'grid-drop-ghost' });
+  const DRAG_THRESHOLD_PX = 5;
+
+  const updateDrag = () => {
+    const drag = state.panelDrag;
+    const grid = dom.modCustomGrid.getBoundingClientRect();
+    const left = drag.x - drag.grab.x - grid.left;
+    const top = drag.y - drag.grab.y - grid.top;
+    drag.widget.style.transform = `translate(${left - drag.natural.x}px, ${top - drag.natural.y}px)`;
+
+    const target = dropRectAt(drag.widget, left, top);
+    const free = isFreeSpot(target, currentGridRects().filter(r => r.id !== target.id));
+    state.dropTarget = free ? target : null;
+    dropGhost.classList.toggle('blocked', !free);
+    dropGhost.style.gridColumn = `${target.col} / span ${target.w}`;
+    dropGhost.style.gridRow = `${target.row} / span ${target.h}`;
+    if (!dropGhost.isConnected) dom.modCustomGrid.append(dropGhost);
+  };
+
+  const endDrag = (drop) => {
+    const drag = state.panelDrag;
+    state.panelDrag = null;
+    if (!drag?.started) return;
+    const target = state.dropTarget;
+    state.dropTarget = null;
+    drag.widget.style.transform = '';
+    drag.widget.classList.remove('is-dragging');
+    dom.modCustomGrid.classList.remove('is-reordering');
+    document.body.classList.remove('is-panel-dragging');
+    dropGhost.remove();
+    if (drop && target) {
+      state.gridPos = { ...state.gridPos, [target.id]: { col: target.col, row: target.row } };
+      layoutGrid(target.id);
+    }
+  };
+
+  document.addEventListener('pointermove', (e) => {
+    const drag = state.panelDrag;
+    if (!drag) return;
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    if (!drag.started) {
+      if (Math.hypot(drag.x - drag.startX, drag.y - drag.startY) < DRAG_THRESHOLD_PX) return;
+      drag.started = true;
+      drag.widget.classList.add('is-dragging');
+      dom.modCustomGrid.classList.add('is-reordering');
+      document.body.classList.add('is-panel-dragging');
+    }
+    updateDrag();
+  });
+  document.addEventListener('pointerup', () => endDrag(true));
+  document.addEventListener('pointercancel', () => endDrag(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.panelDrag?.started) endDrag(false);
+  });
+
+  // Molette pendant un déplacement : la page défile et le panneau suit la souris
+  document.addEventListener('wheel', (e) => {
+    if (!state.panelDrag?.started) return;
+    e.preventDefault(); // sinon la molette ferait défiler le contenu du panneau tenu
+    scrollParentOf(dom.modCustomGrid).scrollBy({ top: e.deltaY });
+  }, { passive: false });
+  document.addEventListener('scroll', () => {
+    if (state.panelDrag?.started) updateDrag();
+  }, true);
+
+  // Hauteur, largeur ou affichage d'un panneau changé : on recalcule les places
+  const observer = new ResizeObserver((entries) => layoutGrid(entries[0]?.target.id));
+  widgets.forEach(w => observer.observe(w));
+  window.addEventListener('resize', () => layoutGrid());
+
   // Restaurer l'agencement enregistré
   restoreGridLayout();
+}
+
+// Premier ancêtre qui défile verticalement (sinon la page)
+function scrollParentOf(el) {
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (/(auto|scroll)/.test(overflowY) && node.scrollHeight > node.clientHeight) return node;
+  }
+  return document.scrollingElement;
+}
+
+function isNarrowGrid() {
+  return window.matchMedia('(max-width: 1100px)').matches;
+}
+
+function widgetColSpan(widget) {
+  const cls = [...widget.classList].find(c => c.startsWith('col-span-'));
+  return cls ? Number(cls.slice('col-span-'.length)) : 6;
+}
+
+// Panneaux affichés, avec leur place enregistrée (col/row absents si jamais placés)
+function currentGridRects() {
+  return [...dom.modCustomGrid.querySelectorAll('.grid-widget')]
+    .filter(w => w.offsetHeight > 0)
+    .map(w => ({
+      id: w.id,
+      w: widgetColSpan(w),
+      h: rowSpanFor(w.offsetHeight),
+      ...state.gridPos?.[w.id]
+    }));
+}
+
+// Case de la grille sous le coin haut-gauche du panneau tenu (left/top en px depuis le coin de la grille)
+function dropRectAt(widget, left, top) {
+  const colWidth = (dom.modCustomGrid.clientWidth - (GRID_COLS - 1) * GRID_GAP_PX) / GRID_COLS;
+  const w = widgetColSpan(widget);
+  return {
+    id: widget.id,
+    w,
+    h: rowSpanFor(widget.offsetHeight),
+    col: clampCol(Math.round(left / (colWidth + GRID_GAP_PX)) + 1, w),
+    row: Math.max(1, Math.round(top / GRID_ROW_PX) + 1)
+  };
+}
+
+/**
+ * Place chaque panneau affiché à sa case ; fixedId garde sa place et repousse les autres vers le bas
+ */
+function layoutGrid(fixedId) {
+  if (isNarrowGrid()) return;
+  const rects = currentGridRects();
+  if (rects.length === 0) return;
+  const placed = resolveCollisions(rects.filter(r => r.col && r.row), fixedId);
+  rects.filter(r => !(r.col && r.row)).forEach(r => placed.push(findFreeSpot(r, placed)));
+
+  const gridPos = { ...state.gridPos };
+  placed.forEach(r => {
+    const widget = document.getElementById(r.id);
+    widget.style.gridColumn = `${r.col} / span ${r.w}`;
+    widget.style.gridRow = `${r.row} / span ${r.h}`;
+    gridPos[r.id] = { col: r.col, row: r.row };
+  });
+  state.gridPos = gridPos;
+  saveGridLayout();
 }
 
 /**
@@ -531,7 +625,8 @@ function saveGridLayout() {
       colSpan: colSpan,
       visible: widget.style.display !== 'none',
       collapsed: widget.classList.contains('collapsed'),
-      height: widget.style.height || ''
+      height: widget.style.height || '',
+      ...state.gridPos?.[widget.id]
     });
   });
 
@@ -552,6 +647,11 @@ function restoreGridLayout() {
     layout.forEach(item => {
       const widget = document.getElementById(item.id);
       if (!widget) return;
+
+      // Place libre enregistrée (absente des anciennes versions : placement automatique)
+      if (Number.isInteger(item.col) && Number.isInteger(item.row) && item.col >= 1 && item.row >= 1) {
+        state.gridPos = { ...state.gridPos, [item.id]: { col: item.col, row: item.row } };
+      }
 
       // Réordonner dans le DOM
       dom.modCustomGrid.appendChild(widget);

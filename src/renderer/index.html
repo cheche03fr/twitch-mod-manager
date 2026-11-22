@@ -47,6 +47,9 @@
     </div>
   </header>
 
+  <!-- Onglets de chaînes (affichés dès qu'une chaîne est ouverte) -->
+  <nav id="channel-tabs" class="channel-tabs hidden" aria-label="Chaînes ouvertes" role="tablist"></nav>
+
   <!-- Écran de connexion (Hors ligne) -->
   <main id="auth-screen" class="view-container">
     <div class="hero-card">
@@ -624,6 +627,9 @@
       </webview>
     </div>
   </main>
+
+  <!-- Zone où s'affiche l'onglet de chaîne actif (posé par l'application par-dessus) -->
+  <div id="tab-host" class="tab-host hidden"></div>
 
   <!-- Paramètres -->
   <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">

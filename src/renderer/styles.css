@@ -730,7 +730,7 @@ button {
 /* Boutons d'action */
 .card-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   margin-top: auto;
 }
@@ -1894,3 +1894,61 @@ body.is-panel-dragging, body.is-panel-dragging .widget-header { cursor: grabbing
 .flex-1 {
   flex: 1;
 }
+
+/* Onglets de chaînes */
+.channel-tabs {
+  position: sticky;
+  top: 64px; /* sous l'en-tête */
+  z-index: 99;
+  display: flex;
+  gap: 4px;
+  padding: 6px 24px 0;
+  overflow-x: auto;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+.channel-tabs.hidden { display: none; }
+.channel-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 220px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.channel-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+.channel-tab:focus-visible { outline: 2px solid var(--twitch-purple); outline-offset: -2px; }
+.channel-tab.active {
+  background: var(--bg-primary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  box-shadow: inset 0 2px 0 var(--twitch-purple);
+}
+.channel-tab img { width: 20px; height: 20px; border-radius: 50%; }
+.channel-tab-name { overflow: hidden; text-overflow: ellipsis; }
+.channel-tab-live { width: 8px; height: 8px; border-radius: 50%; background: #ff5757; flex-shrink: 0; }
+.channel-tab-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.channel-tab-close:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+.tab-host { flex: 1; min-height: 0; }
+
+/* Page affichée dans un onglet : seulement l'écran de modération */
+.in-tab .app-header,
+.in-tab .app-footer,
+.in-tab .channel-tabs,
+.in-tab #dashboard-screen,
+.in-tab #btn-back-to-channels { display: none !important; }

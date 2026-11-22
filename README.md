@@ -31,8 +31,12 @@ Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherch
 - **Statut en direct** : titre du live, jeu, nombre de spectateurs et avatar du streamer.
 - **Recherche** par chaîne ou par jeu, **filtres** *Toutes / En direct / Hors ligne*, **tri** *En direct d'abord / Spectateurs / Nom (A-Z, Z-A)*.
 - **Actualisation automatique** des statuts (intervalle réglable dans les Paramètres).
-- Quatre boutons sur chaque carte : **Gérer** (écran de modération), **Stream** (ouvre le live sur Twitch), **Chat** (ouvre le chat dans une fenêtre détachée) et **Fenêtre**.
-- **Plusieurs chaînes en même temps** : le bouton **Fenêtre** ouvre l'écran de modération de la chaîne dans une nouvelle fenêtre, que vous pouvez placer à côté des autres. Ouvrez-en autant que vous voulez ; recliquer sur **Fenêtre** pour une chaîne déjà ouverte ramène sa fenêtre au premier plan. Le nom de la chaîne s'affiche dans le titre de chaque fenêtre.
+- Trois boutons sur chaque carte : **Gérer** (écran de modération), **Stream** (ouvre le live sur Twitch) et **Chat** (ouvre le chat dans une fenêtre détachée).
+- **Plusieurs chaînes en onglets** : **Gérer** ouvre la chaîne dans un **onglet**, sous l'en-tête. Ouvrez-en autant que vous voulez et passez de l'une à l'autre d'un clic ; l'onglet **📋 Chaînes** ramène à la liste.
+  - Les onglets restent chargés en arrière-plan (stream, chat, actions en direct) ; seul le son de l'onglet affiché est joué.
+  - Un point rouge signale les chaînes en direct.
+  - **×** ou le **clic molette** ferme un onglet ; recliquer sur **Gérer** pour une chaîne déjà ouverte affiche son onglet et recharge son historique.
+  - Ouvrir les ⚙️ Paramètres ramène à la liste des chaînes.
 
 ### Écran de modération
 L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n'avez pas le droit d'utiliser n'est pas affichée (ni son panneau, ni son entrée dans le menu ＋ Panneaux).

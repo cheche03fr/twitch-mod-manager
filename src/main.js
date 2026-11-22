@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, ipcMain, shell, session, dialog } = require('electron');
+﻿const { app, BrowserWindow, WebContentsView, ipcMain, shell, session, dialog } = require('electron');
 const path = require('path');
 const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
@@ -9,27 +9,86 @@ const { fetchTwitchModLog } = require('./twitchModLog');
 
 let mainWindow = null;
 let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
-const channelWindows = new Map(); // identifiant de chaîne -> fenêtre ouverte sur cette chaîne
 
-// Les actions de modération vont à toutes les fenêtres : chacune garde celles de sa chaîne
-function sendToAllWindows(channel, data) {
-  BrowserWindow.getAllWindows().forEach(win => win.webContents.send(channel, data));
+const APP_WEB_PREFERENCES = {
+  preload: path.join(__dirname, 'preload.js'),
+  contextIsolation: true,
+  nodeIntegration: false,
+  webviewTag: true
+};
+
+// Onglets de chaînes : chaque onglet est une page de l'app posée dans la fenêtre principale,
+// qui reste chargée (stream, chat) quand on passe à un autre onglet
+const channelTabs = new Map(); // identifiant de chaîne -> WebContentsView
+let activeTabId = null;
+let tabBounds = null; // zone sous la barre d'onglets, mesurée par la page
+
+// Les actions de modération vont à toutes les pages : chacune garde celles de sa chaîne
+function sendToAllPages(channel, data) {
+  [mainWindow, ...channelTabs.values()].forEach(owner => {
+    if (owner && !owner.webContents.isDestroyed()) owner.webContents.send(channel, data);
+  });
 }
 
 const modActionsClient = new EventSubClient({
-  onAction: (data) => sendToAllWindows('twitch:mod-action', data),
+  onAction: (data) => sendToAllPages('twitch:mod-action', data),
   onError: (broadcasterId, message) => {
     console.error(`EventSub ${broadcasterId} :`, message);
-    sendToAllWindows('twitch:mod-actions-error', { broadcasterId, message });
+    sendToAllPages('twitch:mod-actions-error', { broadcasterId, message });
   }
 });
 
-function newAppWindow() {
+function loadAppPage(webContents, query = '') {
+  if (appUrl) return webContents.loadURL(`${appUrl}/${query}`);
+  return webContents.loadFile(path.join(__dirname, 'renderer', 'index.html'), { search: query });
+}
+
+// Affiche l'onglet demandé (null : la liste des chaînes) ; le son des onglets cachés est coupé
+function showChannelTab(broadcasterId) {
+  activeTabId = channelTabs.has(broadcasterId) ? broadcasterId : null;
+  channelTabs.forEach((view, id) => {
+    const isActive = id === activeTabId;
+    view.setVisible(isActive);
+    view.webContents.setAudioMuted(!isActive);
+    if (isActive) {
+      if (tabBounds) view.setBounds(tabBounds);
+      view.webContents.focus();
+    }
+  });
+}
+
+function openChannelTab(broadcasterId) {
+  const existing = channelTabs.get(broadcasterId);
+  if (existing) {
+    existing.webContents.send('tabs:refocused'); // recharge l'historique, comme un nouveau clic sur Gérer
+  } else {
+    const view = new WebContentsView({ webPreferences: APP_WEB_PREFERENCES });
+    view.setBackgroundColor('#0e0e10');
+    view.webContents.on('will-navigate', (e, url) => {
+      if (!isAppUrl(url)) e.preventDefault();
+    });
+    mainWindow.contentView.addChildView(view);
+    channelTabs.set(broadcasterId, view);
+    loadAppPage(view.webContents, `?channel=${broadcasterId}`);
+  }
+  showChannelTab(broadcasterId);
+}
+
+function closeChannelTab(broadcasterId) {
+  const view = channelTabs.get(broadcasterId);
+  if (!view) return;
+  channelTabs.delete(broadcasterId);
+  mainWindow?.contentView.removeChildView(view);
+  view.webContents.close();
+  if (activeTabId === broadcasterId) showChannelTab(null);
+}
+
+async function createWindow() {
   const iconPath = process.platform === 'win32'
     ? path.join(__dirname, '..', 'assets', 'icon.ico')
     : path.join(__dirname, '..', 'assets', 'icon.png');
 
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1320,
     height: 870,
     minWidth: 950,
@@ -37,37 +96,10 @@ function newAppWindow() {
     backgroundColor: '#0e0e10',
     title: 'Twitch Mod Manager',
     icon: iconPath,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      webviewTag: true
-    }
+    webPreferences: APP_WEB_PREFERENCES
   });
-  win.setMenuBarVisibility(false);
-  return win;
-}
 
-// Fenêtre supplémentaire ouverte directement sur l'écran de modération d'une chaîne
-function openChannelWindow(broadcasterId) {
-  const existing = channelWindows.get(broadcasterId);
-  if (existing && !existing.isDestroyed()) {
-    if (existing.isMinimized()) existing.restore();
-    existing.focus();
-    return;
-  }
-  const win = newAppWindow();
-  channelWindows.set(broadcasterId, win);
-  win.on('closed', () => {
-    if (channelWindows.get(broadcasterId) === win) channelWindows.delete(broadcasterId);
-  });
-  const query = `?channel=${broadcasterId}`;
-  if (appUrl) win.loadURL(`${appUrl}/${query}`);
-  else win.loadFile(path.join(__dirname, 'renderer', 'index.html'), { search: query });
-}
-
-async function createWindow() {
-  mainWindow = newAppWindow();
+  mainWindow.setMenuBarVisibility(false);
 
   // Supprimer les en-têtes qui empêchent l'intégration des iframes (Twitch Player & Chat),
   // uniquement pour les iframes Twitch : les autres réponses gardent leurs protections
@@ -94,6 +126,9 @@ async function createWindow() {
   }
 
   mainWindow.on('closed', () => {
+    channelTabs.forEach(view => view.webContents.close());
+    channelTabs.clear();
+    activeTabId = null;
     mainWindow = null;
   });
 }
@@ -651,12 +686,35 @@ function setupIpcHandlers() {
     return { version: app.getVersion(), buildDate, isPackaged: app.isPackaged };
   });
 
-  // Ouvrir une chaîne dans sa propre fenêtre
-  ipcMain.handle('app:open-channel-window', async (event, broadcasterId) => {
-    if (!/^\d+$/.test(String(broadcasterId))) {
-      return { success: false, error: 'Identifiant de chaîne invalide' };
+  // Onglets de chaînes, pilotés uniquement par la page de la fenêtre principale
+  const fromMainPage = (event) => mainWindow && event.sender === mainWindow.webContents;
+  const isChannelId = (id) => /^\d+$/.test(String(id));
+
+  ipcMain.handle('tabs:open', async (event, broadcasterId) => {
+    if (!fromMainPage(event) || !isChannelId(broadcasterId)) return { success: false, error: 'Onglet invalide' };
+    openChannelTab(String(broadcasterId));
+    return { success: true };
+  });
+
+  ipcMain.handle('tabs:select', async (event, broadcasterId) => {
+    if (!fromMainPage(event) || (broadcasterId !== null && !isChannelId(broadcasterId))) return { success: false, error: 'Onglet invalide' };
+    showChannelTab(broadcasterId === null ? null : String(broadcasterId));
+    return { success: true };
+  });
+
+  ipcMain.handle('tabs:close', async (event, broadcasterId) => {
+    if (!fromMainPage(event) || !isChannelId(broadcasterId)) return { success: false, error: 'Onglet invalide' };
+    closeChannelTab(String(broadcasterId));
+    return { success: true };
+  });
+
+  ipcMain.handle('tabs:set-bounds', async (event, bounds) => {
+    const keys = ['x', 'y', 'width', 'height'];
+    if (!fromMainPage(event) || !bounds || !keys.every(k => Number.isFinite(bounds[k]) && bounds[k] >= 0)) {
+      return { success: false, error: 'Zone invalide' };
     }
-    openChannelWindow(String(broadcasterId));
+    tabBounds = Object.fromEntries(keys.map(k => [k, Math.round(bounds[k])]));
+    if (activeTabId) channelTabs.get(activeTabId)?.setBounds(tabBounds);
     return { success: true };
   });
 

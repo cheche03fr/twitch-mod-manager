@@ -9,7 +9,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Données des chaînes
   loadChannels: () => ipcRenderer.invoke('twitch:load-channels'),
   openExternal: (url) => ipcRenderer.invoke('util:open-external', url),
-  openChannelWindow: (broadcasterId) => ipcRenderer.invoke('app:open-channel-window', broadcasterId),
+
+  // Onglets de chaînes
+  openTab: (broadcasterId) => ipcRenderer.invoke('tabs:open', broadcasterId),
+  selectTab: (broadcasterId) => ipcRenderer.invoke('tabs:select', broadcasterId),
+  closeTab: (broadcasterId) => ipcRenderer.invoke('tabs:close', broadcasterId),
+  setTabBounds: (bounds) => ipcRenderer.invoke('tabs:set-bounds', bounds),
+  onTabRefocused: (callback) => ipcRenderer.on('tabs:refocused', () => callback()),
+
   getAppInfo: () => ipcRenderer.invoke('app:get-info'),
   checkForUpdates: (beta, manual = false) => ipcRenderer.invoke('app:check-updates', beta, manual),
 

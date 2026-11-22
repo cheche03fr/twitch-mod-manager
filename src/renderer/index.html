@@ -279,9 +279,10 @@
               <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
               <span class="widget-icon">📋</span>
               <h3>Actions de Modérateur</h3>
+              <span id="mod-actions-count" class="mod-actions-count">0 action</span>
             </div>
             <div class="widget-actions">
-              <button id="btn-clear-actions-log" class="btn-icon btn-sm" title="Effacer l'historique local">🗑️</button>
+              <button id="btn-clear-actions-log" class="btn-icon btn-sm" title="Effacer l'historique de cette chaîne">🗑️</button>
               <button class="btn-widget-collapse" title="Réduire">−</button>
               <button class="btn-widget-close" title="Fermer ce panneau">×</button>
             </div>
@@ -290,12 +291,7 @@
             <div class="actions-log-filter">
               <input type="text" id="log-search-input" placeholder="Filtrer l'historique..." class="input-sm">
             </div>
-            <div id="mod-actions-list" class="mod-actions-list">
-              <div class="log-entry system">
-                <span class="log-time">Maintenant</span>
-                <span class="log-text">🛡️ Espace modérateur prêt. Les actions apparaîtront ici en direct.</span>
-              </div>
-            </div>
+            <div id="mod-actions-list" class="mod-actions-list"></div>
           </div>
         </div>
 
@@ -667,6 +663,7 @@
   </footer>
 
   <script src="settings.js"></script>
+  <script src="modActions.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

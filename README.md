@@ -36,7 +36,8 @@ L'écran s'adapte à **vos droits sur chaque chaîne** : une fonction que vous n
 - **Purge du chat** et **mode bouclier**.
 - **Paramètres du chat** : mode lent, abonnés, émotes uniquement, followers.
 - **Liste des spectateurs** présents dans le chat, avec recherche.
-- **Journal des actions** de la session, filtrable.
+- **Actions de Modérateur** : raids, VIP, modérateurs, bans, exclusions, messages supprimés, avertissements, modes du chat… envoyés en direct par Twitch, avec le pseudo concerné, l'auteur et la date (« hier », « il y a 3 jours »). Les 100 dernières actions de chaque chaîne sont conservées, avec un filtre de recherche.
+  *Twitch ne donne pas accès aux actions passées : l'historique se remplit tant que l'application est ouverte (pour toutes vos chaînes modérées, même sans ouvrir leur écran).*
 - Onglet **Vue Twitch officielle** : la Mod View de Twitch directement dans l'application.
 
 ### Rôle éditeur de chaîne
@@ -58,7 +59,8 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
 - La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
-- L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions.
+- L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur).
+- Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 
 ---
 

@@ -4,8 +4,17 @@ const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
 const localServer = require('./localServer');
 const { PORT } = require('./config');
+const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
 
 let mainWindow = null;
+
+const modActionsClient = new EventSubClient({
+  onAction: (data) => mainWindow?.webContents.send('twitch:mod-action', data),
+  onError: (broadcasterId, message) => {
+    console.error(`EventSub ${broadcasterId} :`, message);
+    mainWindow?.webContents.send('twitch:mod-actions-error', { broadcasterId, message });
+  }
+});
 
 async function createWindow() {
   const iconPath = process.platform === 'win32'
@@ -214,7 +223,30 @@ function setupIpcHandlers() {
 
   // 3. Déconnexion
   ipcMain.handle('auth:logout', async () => {
+    modActionsClient.stop();
     return AuthManager.logout();
+  });
+
+  // Actions de modération en direct sur les chaînes modérées
+  ipcMain.handle('twitch:start-mod-actions', async (event, broadcasterIds) => {
+    const sessionData = AuthManager.getSession();
+    if (!sessionData || !sessionData.token || !sessionData.userId) {
+      return { success: false, error: 'Non authentifié' };
+    }
+    if (!Array.isArray(broadcasterIds) || !broadcasterIds.every(id => /^\d+$/.test(String(id)))) {
+      return { success: false, error: 'Identifiants de chaînes invalides' };
+    }
+
+    try {
+      const validation = await TwitchService.validateToken(sessionData.token);
+      if (!hasModActionsScopes(validation.scopes || [])) {
+        return { success: false, needsReconnect: true };
+      }
+      modActionsClient.start(sessionData.token, sessionData.userId, broadcasterIds.map(String));
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   });
 
   // 4. Charger les chaînes modérées

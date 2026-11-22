@@ -16,6 +16,12 @@ module.exports = {
     'channel:manage:broadcast',
     'channel:read:editors',
     'channel:edit:commercial',
-    'channel:manage:predictions'
+    'channel:manage:predictions',
+    // Historique des actions de modération (EventSub channel.moderate v2)
+    'moderator:read:blocked_terms',
+    'moderator:read:unban_requests',
+    'moderator:read:warnings',
+    'moderator:read:moderators',
+    'moderator:read:vips'
   ].join(' ')
 };

@@ -21,6 +21,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   toggleShieldMode: (broadcasterId, isActive) => ipcRenderer.invoke('twitch:toggle-shield-mode', broadcasterId, isActive),
   resolveUser: (login) => ipcRenderer.invoke('twitch:resolve-user', login),
 
+  // Actions de modération Twitch en direct
+  startModActions: (broadcasterIds) => ipcRenderer.invoke('twitch:start-mod-actions', broadcasterIds),
+  onModAction: (callback) => ipcRenderer.on('twitch:mod-action', (_e, data) => callback(data)),
+  onModActionsError: (callback) => ipcRenderer.on('twitch:mod-actions-error', (_e, data) => callback(data)),
+
   // Rôle Éditeur de chaîne
   checkEditorRights: (broadcasterId) => ipcRenderer.invoke('twitch:check-editor-rights', broadcasterId),
   getChannelInfo: (broadcasterId) => ipcRenderer.invoke('twitch:get-channel-info', broadcasterId),

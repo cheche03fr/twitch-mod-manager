@@ -8,6 +8,8 @@ const state = {
   autoRefreshTimer: null,
   isRefreshing: false,
   settings: loadSettings(), // settings.js
+  modActions: loadModActions(), // modActions.js : { [broadcasterId]: [{ receivedAt, event }] }
+  modActionsNotice: '',
 
   // Espace modération active
   currentChannel: null,
@@ -98,6 +100,7 @@ const dom = {
 
   // Actions de Modérateur (Log)
   modActionsList: document.getElementById('mod-actions-list'),
+  modActionsCount: document.getElementById('mod-actions-count'),
   logSearchInput: document.getElementById('log-search-input'),
   btnClearActionsLog: document.getElementById('btn-clear-actions-log'),
 
@@ -285,21 +288,32 @@ function setupEventListeners() {
 
   // Historique des actions
   dom.btnClearActionsLog.addEventListener('click', () => {
-    dom.modActionsList.innerHTML = `
-      <div class="log-entry system">
-        <span class="log-time">Maintenant</span>
-        <span class="log-text">Historique réinitialisé.</span>
-      </div>
-    `;
+    const channel = state.currentChannel;
+    if (!channel || !confirm(`Effacer l'historique des actions de ${channel.name} ? Il ne pourra pas être récupéré.`)) return;
+    const { [channel.id]: _removed, ...rest } = state.modActions;
+    state.modActions = rest;
+    saveModActions(state.modActions);
+    renderModActions();
   });
 
-  dom.logSearchInput.addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    const entries = dom.modActionsList.querySelectorAll('.log-entry');
-    entries.forEach(entry => {
-      entry.style.display = entry.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-    });
+  dom.logSearchInput.addEventListener('input', renderModActions);
+
+  window.electronAPI.onModAction((entry) => {
+    if (!entry?.event?.broadcaster_user_id || !entry.event.action) return;
+    state.modActions = addModAction(state.modActions, entry);
+    saveModActions(state.modActions);
+    if (state.currentChannel && String(state.currentChannel.id) === entry.event.broadcaster_user_id) {
+      renderModActions();
+    }
   });
+
+  window.electronAPI.onModActionsError(({ message }) => {
+    state.modActionsNotice = `⚠️ Suivi des actions indisponible : ${message}`;
+    renderModActions();
+  });
+
+  // Les dates relatives (« il y a 5 min ») restent justes
+  setInterval(() => { if (state.currentChannel) renderModActions(); }, 60000);
 
   // Édition
   dom.btnOpenStreamManager.addEventListener('click', () => {
@@ -563,25 +577,56 @@ function restoreGridLayout() {
 }
 
 /**
- * Ajoute une ligne dans le journal des actions de modérateur en direct
+ * Affiche les actions de modération Twitch de la chaîne ouverte (les plus récentes en haut)
  */
-function addModActionLog(text, type = 'system') {
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+function renderModActions() {
+  const channel = state.currentChannel;
+  const all = channel ? (state.modActions[channel.id] || []) : [];
+  const query = dom.logSearchInput.value.toLowerCase().trim();
+  const rows = all
+    .map(entry => ({ entry, ...describeModAction(entry) }))
+    .filter(row => !query || `${row.target || ''} ${row.text}`.toLowerCase().includes(query));
 
-  const entry = document.createElement('div');
-  entry.className = `log-entry ${type}`;
-  entry.innerHTML = `
-    <span class="log-time">${timeStr}</span>
-    <span class="log-text">${escapeHtml(text)}</span>
-  `;
+  dom.modActionsCount.textContent = `${all.length} action${all.length > 1 ? 's' : ''}`;
+  dom.modActionsList.replaceChildren();
 
-  dom.modActionsList.insertBefore(entry, dom.modActionsList.firstChild);
-
-  // Limiter à 50 entrées max
-  while (dom.modActionsList.children.length > 50) {
-    dom.modActionsList.removeChild(dom.modActionsList.lastChild);
+  if (state.modActionsNotice) {
+    dom.modActionsList.append(Object.assign(document.createElement('p'), {
+      className: 'card-hint', textContent: state.modActionsNotice
+    }));
   }
+  if (rows.length === 0) {
+    dom.modActionsList.append(Object.assign(document.createElement('p'), {
+      className: 'card-hint',
+      textContent: all.length ? 'Aucune action ne correspond au filtre.'
+        : 'Aucune action pour le moment. Les actions de modération (raids, VIP, bans…) apparaissent ici dès que l\'application est ouverte.'
+    }));
+    return;
+  }
+
+  rows.forEach(row => {
+    const item = document.createElement('div');
+    item.className = 'mod-action-item';
+    const icon = Object.assign(document.createElement('span'), { className: 'mod-action-icon', textContent: row.icon });
+    const body = document.createElement('div');
+    body.className = 'mod-action-body';
+    if (row.target) {
+      const link = Object.assign(document.createElement('a'), {
+        className: 'mod-action-target', textContent: row.target, href: '#'
+      });
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.electronAPI.openExternal(`https://www.twitch.tv/${encodeURIComponent(row.target)}`);
+      });
+      body.append(link);
+    }
+    body.append(Object.assign(document.createElement('div'), {
+      className: 'mod-action-text',
+      textContent: `${row.text} • ${formatRelativeTime(row.entry.receivedAt)}`
+    }));
+    item.append(icon, body);
+    dom.modActionsList.append(item);
+  });
 }
 
 /**
@@ -713,6 +758,7 @@ async function fetchChannels() {
       state.channels = res.channels;
       updateCounters();
       renderChannels();
+      startModActions();
 
       const now = new Date();
       const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -726,6 +772,25 @@ async function fetchChannels() {
     dom.loadingSpinner.classList.add('hidden');
     dom.channelsGrid.classList.remove('hidden');
   }
+}
+
+/**
+ * Suit les actions de modération de toutes les chaînes modérées (sans effet sur celles déjà suivies)
+ */
+async function startModActions() {
+  try {
+    const res = await window.electronAPI.startModActions(state.channels.map(c => String(c.id)));
+    if (res.needsReconnect) {
+      state.modActionsNotice = '🔑 Déconnecte-toi puis reconnecte-toi pour autoriser l\'historique des actions de modération.';
+    } else if (!res.success) {
+      state.modActionsNotice = `⚠️ Suivi des actions indisponible : ${res.error}`;
+    } else {
+      state.modActionsNotice = '';
+    }
+  } catch (err) {
+    state.modActionsNotice = `⚠️ Suivi des actions indisponible : ${err.message}`;
+  }
+  renderModActions();
 }
 
 function updateCounters() {
@@ -959,7 +1024,8 @@ async function openModerationScreen(channel) {
   dom.banFeedback.innerText = '';
   dom.banFeedback.className = 'action-feedback';
 
-  addModActionLog(`Connecté à la chaîne @${channel.login}. Espace modérateur prêt.`, 'system');
+  dom.logSearchInput.value = '';
+  renderModActions();
 
   // Tout ce qui demande un droit reste masqué tant que le droit n'est pas confirmé
   ALL_RIGHTS.forEach(right => showRight(right, false));
@@ -1139,8 +1205,6 @@ async function applySanction() {
       dom.banFeedback.innerText = `✅ ${typeStr} sur @${targetUser} effectué.`;
       dom.banFeedback.className = 'action-feedback success';
       dom.banUserInput.value = '';
-
-      addModActionLog(`🔨 ${typeStr} appliqué à @${targetUser} (Motif : ${reason})`, duration === 0 ? 'ban' : 'timeout');
     } else {
       dom.banFeedback.innerText = `❌ ${res.error || 'Erreur sanction'}`;
       dom.banFeedback.className = 'action-feedback error';
@@ -1161,11 +1225,7 @@ async function updateChatSetting(settingObj) {
 
   try {
     const res = await window.electronAPI.updateChatSettings(state.currentChannel.id, settingObj);
-    if (res.success) {
-      const key = Object.keys(settingObj)[0];
-      const val = settingObj[key] ? 'activé' : 'désactivé';
-      addModActionLog(`💬 Paramètre ${key} : ${val}`, 'chat');
-    } else {
+    if (!res.success) {
       alert(`Erreur : ${res.error}`);
       loadChannelRights(state.currentChannel);
     }
@@ -1184,7 +1244,6 @@ async function handleClearChat() {
   try {
     const res = await window.electronAPI.clearChat(state.currentChannel.id);
     if (res.success) {
-      addModActionLog(`🗑️ Tout le chat a été purgé par le modérateur.`, 'chat');
       alert('✅ Chat purgé.');
     } else {
       alert(`❌ Erreur : ${res.error}`);
@@ -1208,7 +1267,6 @@ async function handleToggleShield() {
     if (res.success) {
       dom.btnToggleShield.dataset.active = newStatus ? 'true' : 'false';
       dom.btnToggleShield.innerText = newStatus ? '🛡️ DÉSACTIVER Bouclier' : '🛡️ ACTIVER Bouclier';
-      addModActionLog(`🛡️ Mode Bouclier ${newStatus ? 'ACTIVÉ en urgence' : 'DÉSACTIVÉ'}`, 'shield');
     } else {
       alert(`Erreur Mode Bouclier : ${res.error}`);
     }
@@ -1440,7 +1498,6 @@ async function handleSaveChannelInfo() {
       dom.modStreamerGame.innerText = `🎮 ${state.selectedGameName || 'Discussion'}`;
       dom.statStreamGame.innerText = state.selectedGameName || 'Discussion';
 
-      addModActionLog(`✏️ Titre mis à jour : "${title}" (Jeu : ${state.selectedGameName})`, 'system');
     } else {
       dom.editorSaveFeedback.innerText = `❌ ${res.error || 'Erreur éditeur'}`;
       dom.editorSaveFeedback.className = 'action-feedback error';
@@ -1463,7 +1520,6 @@ async function handleTriggerCommercial(length) {
     if (res.success) {
       dom.commercialFeedback.innerText = `✅ Pub de ${length}s lancée !`;
       dom.commercialFeedback.className = 'action-feedback success';
-      addModActionLog(`📺 Coupure publicitaire de ${length}s déclenchée`, 'system');
     } else {
       dom.commercialFeedback.innerText = `❌ ${res.error || 'Erreur pub'}`;
       dom.commercialFeedback.className = 'action-feedback error';
@@ -1694,7 +1750,6 @@ async function predictionAction(predictionId, status, winningOutcomeId) {
   try {
     const res = await window.electronAPI.updatePrediction(broadcasterId, predictionId, status, winningOutcomeId);
     if (!res.success) throw new Error(res.error || 'Echec mise a jour');
-    addModActionLog('Prediction ' + status + ' : ' + predictionId, 'system');
     setTimeout(() => loadPredictions(broadcasterId), 1200);
   } catch (err) {
     console.error('predictionAction:', err);
@@ -1721,7 +1776,6 @@ async function createPredictionFromForm() {
     if (fb) { fb.textContent = 'Prediction creee !'; fb.className = 'action-feedback success'; }
     const modal = document.getElementById('prediction-modal');
     if (modal) modal.style.display = 'none';
-    addModActionLog('Prediction creee : ' + title, 'system');
     setTimeout(() => loadPredictions(broadcasterId), 1200);
   } catch (err) {
     if (fb) { fb.textContent = 'Erreur : ' + err.message; fb.className = 'action-feedback error'; }

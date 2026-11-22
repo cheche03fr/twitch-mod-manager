@@ -36,7 +36,11 @@
       "icon": "assets/icon.png",
       "target": [
         "nsis"
-      ]
+      ],
+      "signtoolOptions": {
+        "publisherName": "cheche03fr"
+      },
+      "verifyUpdateCodeSignature": false
     },
     "copyright": "Copyright (c) 2026 cheche03fr. Tous droits réservés.",
     "publish": {

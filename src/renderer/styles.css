@@ -2041,22 +2041,45 @@ body.is-panel-dragging, body.is-panel-dragging .widget-header { cursor: grabbing
 .pred-duration select { padding: 5px 8px; cursor: pointer; }
 .pred-form .action-feedback:empty { display: none; }
 
-/* Bouton « Mettre à jour » de l'en-tête (mises à jour automatiques) */
+/* Icône « Installer la mise à jour » de l'en-tête (mises à jour automatiques), à côté de ⚙️ */
 .btn-install-update {
-  background: #2ecc71;
-  color: #fff;
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  margin-right: 8px;
-  box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5);
+  position: relative;
+  width: 36px;
+  height: 36px;
+  margin-right: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(145, 70, 255, 0.12);
+  border: 1px solid rgba(145, 70, 255, 0.35);
+  box-shadow: 0 0 0 0 rgba(145, 70, 255, 0.5);
   animation: update-pulse 2s ease-out infinite;
 }
-.btn-install-update:hover { background: #27ae60; }
-.btn-install-update:disabled { animation: none; opacity: 0.7; cursor: wait; }
-@keyframes update-pulse { 70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
-@media (prefers-reduced-motion: reduce) { .btn-install-update { animation: none; } }
+.btn-install-update:hover { background: rgba(145, 70, 255, 0.25); border-color: var(--twitch-purple); }
+.btn-install-update:focus-visible { outline: 2px solid var(--twitch-purple); outline-offset: 2px; }
+.update-icon-cycle { stroke: var(--twitch-purple); transform-origin: 12px 12px; }
+.update-icon-arrow { stroke: var(--twitch-purple-light); }
+.update-icon-arrow path:nth-child(2) { fill: var(--twitch-purple-light); }
+/* Pastille : une mise à jour est prête */
+.update-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2ecc71;
+  box-shadow: 0 0 0 2px var(--bg-secondary);
+}
+.btn-install-update.is-installing { animation: none; cursor: wait; }
+.btn-install-update.is-installing .update-icon-cycle { animation: update-spin 1.2s linear infinite; }
+.btn-install-update.is-installing .update-badge { display: none; }
+@keyframes update-pulse { 70% { box-shadow: 0 0 0 8px rgba(145, 70, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(145, 70, 255, 0); } }
+@keyframes update-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn-install-update, .btn-install-update.is-installing .update-icon-cycle { animation: none; }
+}
 
 /* Connexion automatique / onglet de chaîne : pas de page de connexion pendant la vérification de la session */
 .auto-login #auth-screen,

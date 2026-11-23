@@ -16,7 +16,7 @@ Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, 
 Au démarrage, l'application vérifie s'il existe une nouvelle version et la télécharge en arrière-plan. Une fenêtre vous propose alors **Installer maintenant** ou **Plus tard** : rien n'est installé sans votre accord.
 
 Avec la case **Mises à jour automatiques** cochée dans les ⚙️ Paramètres :
-- la mise à jour se télécharge sans question, puis un bouton vert **⬆️ Mettre à jour** apparaît à côté de ⚙️ : un clic l'installe et relance l'application ;
+- la mise à jour se télécharge sans question, puis une **icône de mise à jour** violette (flèches en cercle autour d'une flèche de téléchargement, avec une pastille verte) apparaît à côté de ⚙️ : un clic l'installe et relance l'application ; son infobulle indique la version ;
 - si vous ne l'utilisez pas, elle s'installe au **prochain démarrage**, derrière un écran « Mise à jour en cours », puis l'application s'ouvre d'elle-même dans la nouvelle version.
 
 La version installée et sa date sont affichées dans le pied de page, toujours visible en bas de la fenêtre.

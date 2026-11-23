@@ -1985,19 +1985,25 @@ function setupSettings() {
     checkUpdates();
   });
 
-  // Mode automatique : bouton « Mettre à jour » dans l'en-tête dès que la mise à jour est téléchargée
+  // Mode automatique : icône de mise à jour dans l'en-tête dès que la mise à jour est téléchargée
   const btnInstallUpdate = document.getElementById('btn-install-update');
+  const setUpdateLabel = (label) => {
+    btnInstallUpdate.title = label;
+    btnInstallUpdate.setAttribute('aria-label', label);
+  };
   window.electronAPI.onUpdateReady(({ version }) => {
-    btnInstallUpdate.textContent = `⬆️ Mettre à jour (v${version})`;
+    setUpdateLabel(`Installer la mise à jour v${version} : l'application redémarre`);
     btnInstallUpdate.classList.remove('hidden');
   });
   btnInstallUpdate.addEventListener('click', async () => {
     btnInstallUpdate.disabled = true;
-    btnInstallUpdate.textContent = '⏳ Installation…';
+    btnInstallUpdate.classList.add('is-installing');
+    setUpdateLabel('Installation de la mise à jour…');
     const res = await window.electronAPI.installUpdate();
     if (!res.success) {
       btnInstallUpdate.disabled = false;
-      btnInstallUpdate.textContent = '⬆️ Mettre à jour';
+      btnInstallUpdate.classList.remove('is-installing');
+      setUpdateLabel('Installer la mise à jour téléchargée : l\'application redémarre');
     }
   });
 
@@ -2015,7 +2021,7 @@ function setupSettings() {
         updateStatus.textContent = `Recherche impossible : ${res.error}`;
       } else if (res.updateAvailable) {
         updateStatus.textContent = state.settings.autoUpdates
-          ? `Version ${res.version} trouvée : téléchargement en cours, puis bouton « ⬆️ Mettre à jour » à côté de ⚙️.`
+          ? `Version ${res.version} trouvée : téléchargement en cours, puis icône de mise à jour à côté de ⚙️.`
           : `Version ${res.version} trouvée : téléchargement en cours, l'installation vous sera proposée.`;
       } else {
         updateStatus.textContent = `✅ Vous avez la dernière version (${res.version}).`;

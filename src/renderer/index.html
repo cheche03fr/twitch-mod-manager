@@ -38,7 +38,23 @@
         </button>
         <button id="btn-logout" class="btn-secondary btn-sm">Déconnexion</button>
       </div>
-      <button id="btn-install-update" class="btn-install-update hidden" title="Installer la mise à jour téléchargée : l'application redémarre">⬆️ Mettre à jour</button>
+      <button id="btn-install-update" class="btn-install-update hidden" title="Installer la mise à jour téléchargée : l'application redémarre" aria-label="Installer la mise à jour">
+        <svg class="update-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <!-- Deux flèches en cercle (violet Twitch) autour d'une flèche de téléchargement -->
+          <g class="update-icon-cycle">
+            <path d="M19.4 9.2A8 8 0 0 0 6 6.3"></path>
+            <path d="M5.4 3.4v3.4h3.4"></path>
+            <path d="M4.6 14.8A8 8 0 0 0 18 17.7"></path>
+            <path d="M18.6 20.6v-3.4h-3.4"></path>
+          </g>
+          <g class="update-icon-arrow">
+            <path d="M12 7.6v3.4"></path>
+            <path d="M9.4 11.2h5.2L12 14.2z"></path>
+            <path d="M9.2 16.4h5.6"></path>
+          </g>
+        </svg>
+        <span class="update-badge" aria-hidden="true"></span>
+      </button>
       <button id="btn-settings" class="btn-icon" title="Paramètres" aria-label="Paramètres">
         <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3"></circle>
@@ -682,7 +698,7 @@
           <input type="checkbox" id="setting-auto-updates">
           <span>Mises à jour automatiques</span>
         </label>
-        <p class="settings-hint">Téléchargement sans question, puis un bouton « ⬆️ Mettre à jour » à côté de ⚙️. Si vous ne l'utilisez pas, la mise à jour s'installe au prochain démarrage.</p>
+        <p class="settings-hint">Téléchargement sans question, puis une icône de mise à jour à côté de ⚙️. Si vous ne l'utilisez pas, la mise à jour s'installe au prochain démarrage.</p>
         <div class="update-check-row">
           <button type="button" id="btn-check-updates" class="btn-secondary btn-sm">🔄 Rechercher une mise à jour</button>
           <span id="update-check-status" class="settings-hint" role="status"></span>

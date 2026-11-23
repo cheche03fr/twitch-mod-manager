@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 46 commits, 40 versions publiées (22 normales et 18 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 47 commits, 41 versions publiées (23 normales et 18 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -16,8 +16,9 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 7. [Le contrôle de sécurité](#7-le-contrôle-de-sécurité--v1020--v1021)
 8. [Débannir, mises à jour automatiques et finitions](#8-débannir-mises-à-jour-automatiques-et-finitions--v1022--v1023-beta6)
 9. [La grande factorisation](#9-la-grande-factorisation--v1023-beta7)
-10. [Leçons techniques](#10-leçons-techniques)
-11. [Et après ?](#11-et-après-)
+10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
+11. [Leçons techniques](#11-leçons-techniques)
+12. [Et après ?](#12-et-après-)
 
 ---
 
@@ -117,7 +118,20 @@ Aucune nouveauté visible : le code est réorganisé pour rester maintenable.
 
 Au passage, l'identifiant de chaîne est désormais **vérifié sur tous les échanges** Twitch, au lieu de 7, et les vérifications des droits se font **en parallèle**.
 
-## 10. Leçons techniques
+## 10. v1.0.23 : la série passe en version normale
+*23 novembre 2026*
+
+Les sept bêtas 1.0.23 sont réunies dans une **version normale**, proposée à tout le monde (case bêta cochée ou non). Pour ceux qui viennent de la v1.0.22, voici ce qui arrive d'un coup :
+
+- **Mises à jour automatiques** (option des Paramètres) : téléchargement sans question, **icône violette** à côté de ⚙️ pour installer tout de suite, sinon installation au prochain démarrage derrière l'écran **« Mise à jour en cours »** avec le logo qui tourne.
+- **Connexion automatique au démarrage** (option des Paramètres) : désactivée par défaut. La page de connexion s'affiche donc au démarrage, et « Se connecter avec Twitch » réutilise la session enregistrée sans repasser par le navigateur.
+- **Paramètres redessinés** : options en boutons (violet = activée), curseur violet pour l'intervalle d'actualisation, logo sur « Rechercher une mise à jour ».
+- **Sa propre chaîne toujours en premier** dans la liste.
+- **Code factorisé** (voir le chapitre 9) : aucun changement visible, mais un code plus court, mieux rangé et mieux testé.
+
+À noter : le nouvel écran au clic sur l'icône de mise à jour ne se verra qu'à la **prochaine** mise à jour, car c'est la version installée qui l'affiche.
+
+## 11. Leçons techniques
 
 - **Le site de Twitch peut plus que son API officielle.** Pour un éditeur ou un modérateur, la seule voie est l'API GraphQL interne. Les requêtes sont des « requêtes persistées » identifiées par une empreinte, qui peut changer sans prévenir. Chaque empreinte est notée dans le code (`shortcut:`) avec la marche à suivre pour la relever.
 - **Capturer plutôt que deviner.** Toutes les requêtes internes ont été relevées en observant le trafic de la Vue Twitch officielle pendant une vraie action faite par l'utilisateur, en lisant seulement le contenu et jamais le jeton.
@@ -126,11 +140,11 @@ Au passage, l'identifiant de chaîne est désormais **vérifié sur tous les éc
 - **Un compte à rebours figé est un bug** : un temps restant calculé une seule fois laissait croire qu'une prédiction était encore ouverte alors que Twitch l'avait déjà verrouillée.
 - **Tester sans rien casser en vrai** : aucune action visible n'a été lancée sur les chaînes pendant les tests automatiques (pas de ban, de prédiction ni de pub). Les vraies actions ont été faites par l'utilisateur, et les états d'interface simulés localement.
 
-## 11. Et après ?
+## 12. Et après ?
 
 - Garder un œil sur les **empreintes des requêtes internes** de Twitch : si une fonction « chez les autres » cesse de marcher, il faudra relever la nouvelle empreinte.
 - Les **6 failles moyennes** restantes de `npm audit` concernent uniquement les outils de compilation (electron-builder), pas l'application installée.
-- Passer la série **v1.0.23** en version normale une fois les bêtas validées.
+- Chaque nouvelle version, bêta ou normale, aura désormais son entrée dans ce devlog.
 
 ---
 

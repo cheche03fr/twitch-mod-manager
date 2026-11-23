@@ -62,8 +62,9 @@ const dom = {
   lastUpdateText: document.getElementById('last-update-text'),
   btnSettings: document.getElementById('btn-settings'),
   settingsDialog: document.getElementById('settings-dialog'),
-  settingRefreshChoices: document.querySelectorAll('input[name="setting-refresh"]'),
+  settingRefresh: document.getElementById('setting-refresh'),
   settingRefreshEnabled: document.getElementById('setting-refresh-enabled'),
+  settingRefreshValue: document.getElementById('setting-refresh-value'),
   loadingSpinner: document.getElementById('loading-spinner'),
   channelsGrid: document.getElementById('channels-grid'),
   emptyState: document.getElementById('empty-state'),
@@ -1932,10 +1933,15 @@ function setupSettings() {
 
   const showRefreshControls = () => {
     dom.settingRefreshEnabled.checked = state.settings.autoRefresh;
-    dom.settingRefreshChoices.forEach(radio => {
-      radio.checked = Number(radio.value) === state.settings.refreshSeconds;
-      radio.disabled = !state.settings.autoRefresh;
-    });
+    dom.settingRefresh.value = String(state.settings.refreshSeconds);
+    dom.settingRefresh.disabled = !state.settings.autoRefresh;
+    showRefreshValue(state.settings.refreshSeconds);
+  };
+  // Valeur affichée et partie violette du curseur
+  const showRefreshValue = (seconds) => {
+    const { min, max } = dom.settingRefresh;
+    dom.settingRefresh.style.setProperty('--pct', `${((seconds - min) / (max - min)) * 100}%`);
+    dom.settingRefreshValue.textContent = `${seconds} s`;
   };
   const applyRefresh = (changes) => {
     updateSettings(changes);
@@ -1951,9 +1957,9 @@ function setupSettings() {
   });
 
   dom.settingRefreshEnabled.addEventListener('change', (e) => applyRefresh({ autoRefresh: e.target.checked }));
-  dom.settingRefreshChoices.forEach(radio => {
-    radio.addEventListener('change', (e) => applyRefresh({ refreshSeconds: Number(e.target.value) }));
-  });
+  // Pendant le glissement : affichage seulement ; au relâchement : enregistrement
+  dom.settingRefresh.addEventListener('input', (e) => showRefreshValue(Number(e.target.value)));
+  dom.settingRefresh.addEventListener('change', (e) => applyRefresh({ refreshSeconds: Number(e.target.value) }));
 
   dom.settingsDialog.querySelectorAll('input[name="setting-theme"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
@@ -2012,6 +2018,7 @@ function setupSettings() {
   const updateStatus = document.getElementById('update-check-status');
   btnCheckUpdates.addEventListener('click', async () => {
     btnCheckUpdates.disabled = true;
+    btnCheckUpdates.classList.add('is-checking'); // le logo tourne pendant la recherche
     updateStatus.textContent = 'Recherche en cours…';
     try {
       const res = await checkUpdates(true);
@@ -2028,6 +2035,7 @@ function setupSettings() {
       updateStatus.textContent = `Recherche impossible : ${err.message}`;
     } finally {
       btnCheckUpdates.disabled = false;
+      btnCheckUpdates.classList.remove('is-checking');
     }
   });
 }

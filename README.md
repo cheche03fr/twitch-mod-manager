@@ -16,7 +16,7 @@ Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, 
 Au démarrage, l'application vérifie s'il existe une nouvelle version et la télécharge en arrière-plan. Une fenêtre vous propose alors **Installer maintenant** ou **Plus tard** : rien n'est installé sans votre accord.
 
 Avec **Mises à jour automatiques** activé dans les ⚙️ Paramètres :
-- la mise à jour se télécharge sans question, puis une **icône de mise à jour** violette (flèches en cercle autour d'une flèche de téléchargement, avec une pastille verte) apparaît à côté de ⚙️ : un clic l'installe et relance l'application ; son infobulle indique la version ;
+- la mise à jour se télécharge sans question, puis une **icône de mise à jour** violette (flèches en cercle autour d'une flèche de téléchargement, avec une pastille verte) apparaît à côté de ⚙️ : un clic affiche l'écran « Mise à jour en cours » (le même qu'au démarrage, avec le logo qui tourne), installe la mise à jour et relance l'application ; son infobulle indique la version ;
 - si vous ne l'utilisez pas, elle s'installe au **prochain démarrage**, derrière un écran « Mise à jour en cours », puis l'application s'ouvre d'elle-même dans la nouvelle version.
 
 La version installée et sa date sont affichées dans le pied de page, toujours visible en bas de la fenêtre.
@@ -84,9 +84,9 @@ Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite. Chaque option est un bouton, dans le même style que les durées de sanction : **violet** quand elle est activée, gris sinon.
 - **Connexion automatique au démarrage** (désactivée par défaut) : activée, l'application ouvre directement vos chaînes sans afficher la page de connexion ; désactivée, la page de connexion s'affiche à chaque démarrage.
-- **Actualisation automatique** des chaînes, et son intervalle à choisir parmi **30, 45, 60, 75, 90, 105 ou 120 secondes** (30 s par défaut).
+- **Actualisation automatique** des chaînes, et un **curseur** violet pour choisir l'intervalle, de **30 à 120 secondes** par pas de 15 (30 s par défaut) ; la valeur s'affiche à côté.
 - **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
-- **Versions bêta** : voir [Versions bêta](#versions-bêta). **Mises à jour automatiques** : voir [Mises à jour automatiques](#mises-à-jour-automatiques). Le bouton **🔄 Rechercher une mise à jour** lance la recherche tout de suite.
+- **Versions bêta** : voir [Versions bêta](#versions-bêta). **Mises à jour automatiques** : voir [Mises à jour automatiques](#mises-à-jour-automatiques). Le bouton **Rechercher une mise à jour** (avec le logo de mise à jour, qui tourne pendant la recherche) lance la recherche tout de suite.
 
 Les choix sont enregistrés et retrouvés au prochain démarrage.
 

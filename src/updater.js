@@ -106,17 +106,21 @@ async function checkForUpdates(beta, manual, auto) {
   return { updateAvailable: Boolean(result?.isUpdateAvailable), version: result?.updateInfo?.version || null };
 }
 
-/** Bouton « Mettre à jour » : installe en silence puis relance l'application. */
+const SPLASH_BEFORE_INSTALL_MS = 1500; // le temps de voir l'écran avant que l'installeur ferme l'application
+
+/** Icône de l'en-tête : même écran « Mise à jour en cours » qu'au démarrage, puis installation silencieuse et relance. */
 function installNow() {
   if (!readyVersion) return false;
-  autoUpdater.quitAndInstall(true, true);
+  showSplash(readyVersion);
+  getMainWindow()?.hide();
+  setTimeout(() => autoUpdater.quitAndInstall(true, true), SPLASH_BEFORE_INSTALL_MS);
   return true;
 }
 
 function showSplash(version) {
   splash = new BrowserWindow({
     width: 420,
-    height: 200,
+    height: 240,
     frame: false,
     resizable: false,
     alwaysOnTop: true,
@@ -133,11 +137,20 @@ function showSplash(version) {
          background: #18181b; color: #efeff1; font-family: "Segoe UI", sans-serif; border: 1px solid #9146ff; box-sizing: border-box; }
   h1 { margin: 0; font-size: 18px; color: #bf94ff; }
   p { margin: 0; font-size: 13px; color: #adadb8; }
+  .logo { width: 44px; height: 44px; padding: 8px; border-radius: 50%; background: rgba(145, 70, 255, 0.12); border: 1px solid rgba(145, 70, 255, 0.35); }
+  .cycle { stroke: #9146ff; transform-origin: 12px 12px; animation: spin 1.2s linear infinite; }
+  .arrow { stroke: #bf94ff; }
+  .arrow path:nth-child(2) { fill: #bf94ff; }
+  @keyframes spin { to { transform: rotate(-360deg); } }
   .bar { width: 260px; height: 4px; border-radius: 2px; background: #303036; overflow: hidden; }
   .bar::after { content: ''; display: block; width: 40%; height: 100%; background: #9146ff; animation: slide 1.2s ease-in-out infinite; }
   @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
 </style></head><body>
-  <h1>🔄 Mise à jour en cours</h1>
+  <svg class="logo" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <g class="cycle"><path d="M19.4 9.2A8 8 0 0 0 6 6.3"/><path d="M5.4 3.4v3.4h3.4"/><path d="M4.6 14.8A8 8 0 0 0 18 17.7"/><path d="M18.6 20.6v-3.4h-3.4"/></g>
+    <g class="arrow"><path d="M12 7.6v3.4"/><path d="M9.4 11.2h5.2L12 14.2z"/><path d="M9.2 16.4h5.6"/></g>
+  </svg>
+  <h1>Mise à jour en cours</h1>
   <p>Installation de la version ${safeVersion}…</p>
   <div class="bar"></div>
   <p>L'application redémarre toute seule.</p>

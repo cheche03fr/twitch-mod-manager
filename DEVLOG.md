@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 49 commits, 43 versions publiées (23 normales et 20 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 52 commits, 44 versions publiées (24 normales et 20 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -18,8 +18,9 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 9. [La grande factorisation](#9-la-grande-factorisation--v1023-beta7)
 10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
 11. [Les chuchotements](#11-les-chuchotements--v1024-beta1--beta2)
-12. [Leçons techniques](#12-leçons-techniques)
-13. [Et après ?](#13-et-après-)
+12. [Deuxième contrôle de sécurité](#12-deuxième-contrôle-de-sécurité--v1024-beta3)
+13. [Leçons techniques](#13-leçons-techniques)
+14. [Et après ?](#14-et-après-)
 
 ---
 
@@ -144,7 +145,23 @@ Un nouveau panneau **💬 Chuchotements** dans la grille, déplaçable comme les
 - **À faire une fois** : se **déconnecter puis se reconnecter**, pour accorder le nouveau droit `user:manage:whispers`. Sans lui, l'historique s'affiche, mais l'envoi et le direct sont indisponibles.
 - **v1.0.24-beta.2 — Communauté → Chuchotements** : un clic sur un pseudo du panneau **Communauté** remplit maintenant aussi « Pseudo à qui chuchoter », comme il remplissait déjà la cible des Actions Rapides. Si une conversation était ouverte, le panneau revient à la liste pour que le champ soit visible.
 
-## 12. Leçons techniques
+## 12. Deuxième contrôle de sécurité — v1.0.24-beta.3
+*23 novembre 2026*
+
+Un nouveau contrôle complet, après l'arrivée des chuchotements. **Aucune faille critique, élevée ou moyenne** : les messages reçus de n'importe qui sont affichés en texte brut, chaque échange avec Twitch vérifie la session et les identifiants, et `npm audit` ne trouve rien dans l'application installée. Trois points faibles ont été durcis :
+
+- **La chaîne de compilation** :
+  - les actions GitHub sont **figées par empreinte de commit** (un numéro de version peut être déplacé) et passées aux dernières versions (Node.js 24) ;
+  - la compilation n'a plus qu'un **accès en lecture** au dépôt ;
+  - la création de la release passe dans un **job séparé**, le seul à pouvoir écrire, et qui n'installe aucune dépendance npm. Une dépendance piratée ne pourrait donc plus modifier les releases.
+
+  Cette bêta est la première publiée par ce nouveau circuit.
+- **Le serveur interne** vérifie explicitement que chaque fichier demandé reste dans les dossiers de l'application. Il était déjà protégé, mais par un effet de bord ; un test essaie maintenant les chemins piégés.
+- **Le `.gitignore`** exclut le certificat de signature et son mot de passe, au cas où ils seraient copiés un jour dans le projet.
+
+Aucun changement visible dans l'application.
+
+## 13. Leçons techniques
 
 - **Le site de Twitch peut plus que son API officielle.** Pour un éditeur ou un modérateur, la seule voie est l'API GraphQL interne. Les requêtes sont des « requêtes persistées » identifiées par une empreinte, qui peut changer sans prévenir. Chaque empreinte est notée dans le code (`shortcut:`) avec la marche à suivre pour la relever.
 - **Capturer plutôt que deviner.** Toutes les requêtes internes ont été relevées en observant le trafic de la Vue Twitch officielle pendant une vraie action faite par l'utilisateur, en lisant seulement le contenu et jamais le jeton.
@@ -153,7 +170,7 @@ Un nouveau panneau **💬 Chuchotements** dans la grille, déplaçable comme les
 - **Un compte à rebours figé est un bug** : un temps restant calculé une seule fois laissait croire qu'une prédiction était encore ouverte alors que Twitch l'avait déjà verrouillée.
 - **Tester sans rien casser en vrai** : aucune action visible n'a été lancée sur les chaînes pendant les tests automatiques (pas de ban, de prédiction ni de pub). Les vraies actions ont été faites par l'utilisateur, et les états d'interface simulés localement.
 
-## 13. Et après ?
+## 14. Et après ?
 
 - Garder un œil sur les **empreintes des requêtes internes** de Twitch : si une fonction « chez les autres » cesse de marcher, il faudra relever la nouvelle empreinte.
 - Les **6 failles moyennes** restantes de `npm audit` concernent uniquement les outils de compilation (electron-builder), pas l'application installée.

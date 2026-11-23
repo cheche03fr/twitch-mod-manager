@@ -4,10 +4,8 @@ const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
 const localServer = require('./localServer');
 const { PORT } = require('./config');
-const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
-const { fetchTwitchModLog } = require('./twitchModLog');
-const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
-const { getPredictionsViaWeb, createPredictionViaWeb, updatePredictionViaWeb } = require('./twitchPredictions');
+const { EventSubClient } = require('./eventSubClient');
+const { registerTwitchIpc, isChannelId } = require('./ipcTwitch');
 const updater = require('./updater');
 
 let mainWindow = null;
@@ -233,36 +231,30 @@ app.on('window-all-closed', () => {
 /**
  * Configuration de la communication IPC sécurisée
  */
-// Pseudo (avec ou sans @) ou identifiant numérique -> identifiant Twitch, null si introuvable
-async function resolveTargetUserId(token, targetUser) {
-  const value = String(targetUser || '').trim().replace(/^@/, '');
-  if (!value) return null;
-  if (/^\d+$/.test(value)) return value;
-  const user = await TwitchService.getUserByLogin(token, value);
-  return user ? user.id : null;
+// Jeton -> compte affiché par la page (lève une erreur si le jeton n'est plus valide)
+async function loadAppUser(token) {
+  const validation = await TwitchService.validateToken(token);
+  const user = await TwitchService.getUserInfo(token, validation.user_id);
+  return {
+    validation,
+    user: {
+      id: validation.user_id,
+      login: validation.login,
+      displayName: user?.display_name || validation.login,
+      profileImageUrl: user?.profile_image_url || '',
+      scopes: validation.scopes || []
+    }
+  };
 }
 
 function setupIpcHandlers() {
-  // 1. Vérification de la session
+  // Vérification de la session enregistrée
   ipcMain.handle('auth:check-session', async () => {
     const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { authenticated: false };
-    }
-
+    if (!sessionData?.token) return { authenticated: false };
     try {
-      const validation = await TwitchService.validateToken(sessionData.token);
-      const user = await TwitchService.getUserInfo(sessionData.token, validation.user_id);
-      return {
-        authenticated: true,
-        user: {
-          id: validation.user_id,
-          login: validation.login,
-          displayName: user?.display_name || validation.login,
-          profileImageUrl: user?.profile_image_url || '',
-          scopes: validation.scopes || []
-        }
-      };
+      const { user } = await loadAppUser(sessionData.token);
+      return { authenticated: true, user };
     } catch (err) {
       console.warn('Session expirée ou invalide:', err.message);
       AuthManager.logout();
@@ -270,457 +262,37 @@ function setupIpcHandlers() {
     }
   });
 
-  // 2. Connexion Twitch
+  // Connexion Twitch (OAuth dans le navigateur)
   ipcMain.handle('auth:login', async () => {
     try {
       const token = await AuthManager.startOAuthFlow();
-      const validation = await TwitchService.validateToken(token);
-      const user = await TwitchService.getUserInfo(token, validation.user_id);
-
-      await AuthManager.saveSession({
-        token,
-        userId: validation.user_id,
-        login: validation.login
-      });
-
-      return {
-        success: true,
-        user: {
-          id: validation.user_id,
-          login: validation.login,
-          displayName: user?.display_name || validation.login,
-          profileImageUrl: user?.profile_image_url || '',
-          scopes: validation.scopes || []
-        }
-      };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 3. Déconnexion
-  ipcMain.handle('auth:logout', async () => {
-    modActionsClient.stop();
-    return AuthManager.logout();
-  });
-
-  // Actions de modération en direct sur les chaînes modérées
-  ipcMain.handle('twitch:start-mod-actions', async (event, broadcasterIds) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-    if (!Array.isArray(broadcasterIds) || !broadcasterIds.every(id => /^\d+$/.test(String(id)))) {
-      return { success: false, error: 'Identifiants de chaînes invalides' };
-    }
-
-    try {
-      const validation = await TwitchService.validateToken(sessionData.token);
-      if (!hasModActionsScopes(validation.scopes || [])) {
-        return { success: false, needsReconnect: true };
-      }
-      modActionsClient.start(sessionData.token, sessionData.userId, broadcasterIds.map(String));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // Historique passé des actions de modération (comme la Mod View de twitch.tv)
-  ipcMain.handle('twitch:load-mod-log', async (event, broadcasterId) => {
-    if (!/^\d+$/.test(String(broadcasterId))) {
-      return { success: false, error: 'Identifiant de chaîne invalide' };
-    }
-    try {
-      return await fetchTwitchModLog(session, broadcasterId);
-    } catch (err) {
-      console.error('Historique Twitch indisponible :', err.message);
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 4. Charger les chaînes modérées
-  ipcMain.handle('twitch:load-channels', async () => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const moderated = await TwitchService.getModeratedChannels(sessionData.token, sessionData.userId);
-      // Sa propre chaîne en premier (Twitch ne la compte pas parmi les chaînes modérées)
-      const ownChannel = {
-        broadcaster_id: sessionData.userId,
-        broadcaster_login: sessionData.login,
-        broadcaster_name: sessionData.login
-      };
-      const rawChannels = [ownChannel, ...moderated.filter(c => c.broadcaster_id !== sessionData.userId)];
-      const enrichedChannels = (await TwitchService.enrichChannelsData(sessionData.token, rawChannels))
-        .map(c => ({ ...c, isOwn: c.id === sessionData.userId }));
-
-      return {
-        success: true,
-        total: enrichedChannels.length,
-        channels: enrichedChannels
-      };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 5. Droits de modération
-  ipcMain.handle('twitch:get-moderation-rights', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const rights = await TwitchService.checkModerationRights(sessionData.token, broadcasterId, sessionData.userId);
-      return { success: true, rights };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 6. Paramètres du chat
-  ipcMain.handle('twitch:get-chat-settings', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const settings = await TwitchService.getChatSettings(sessionData.token, broadcasterId, sessionData.userId);
-      return { success: true, settings };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  ipcMain.handle('twitch:update-chat-settings', async (event, broadcasterId, settings) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const updated = await TwitchService.updateChatSettings(sessionData.token, broadcasterId, sessionData.userId, settings);
-      return { success: true, settings: updated };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 7. Spectateurs dans le chat
-  ipcMain.handle('twitch:get-chatters', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const data = await TwitchService.getChatters(sessionData.token, broadcasterId, sessionData.userId);
-      return { success: true, total: data.total, chatters: data.chatters };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 8. Sanctions (Ban / Timeout)
-  ipcMain.handle('twitch:ban-user', async (event, broadcasterId, { targetUser, duration, reason }) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const targetUserId = await resolveTargetUserId(sessionData.token, targetUser);
-      if (!targetUserId) {
-        return { success: false, error: `Utilisateur "${targetUser}" introuvable sur Twitch.` };
-      }
-
-      const result = await TwitchService.banOrTimeoutUser(sessionData.token, broadcasterId, sessionData.userId, {
-        targetUserId,
-        duration,
-        reason
-      });
-
-      return { success: true, result };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 8 bis. Levée d'un ban ou d'un timeout
-  ipcMain.handle('twitch:unban-user', async (event, broadcasterId, targetUser) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-    if (!/^\d+$/.test(String(broadcasterId))) {
-      return { success: false, error: 'Identifiant de chaîne invalide' };
-    }
-
-    try {
-      const targetUserId = await resolveTargetUserId(sessionData.token, targetUser);
-      if (!targetUserId) {
-        return { success: false, error: `Utilisateur "${targetUser}" introuvable sur Twitch.` };
-      }
-      await TwitchService.unbanUser(sessionData.token, broadcasterId, sessionData.userId, targetUserId);
-      return { success: true };
-    } catch (err) {
-      // 400 : la personne n'est ni bannie ni exclue sur cette chaîne
-      if (/\(400\)/.test(err.message)) return { success: false, error: 'Cette personne n\'est ni bannie ni exclue sur cette chaîne.' };
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 9. Purge du chat
-  ipcMain.handle('twitch:clear-chat', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      await TwitchService.clearChat(sessionData.token, broadcasterId, sessionData.userId);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 10. Mode bouclier
-  ipcMain.handle('twitch:toggle-shield-mode', async (event, broadcasterId, isActive) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const result = await TwitchService.updateShieldMode(sessionData.token, broadcasterId, sessionData.userId, isActive);
-      return { success: true, result };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // 11. Résoudre utilisateur
-  ipcMain.handle('twitch:resolve-user', async (event, login) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const user = await TwitchService.getUserByLogin(sessionData.token, login);
+      const { validation, user } = await loadAppUser(token);
+      await AuthManager.saveSession({ token, userId: validation.user_id, login: validation.login });
       return { success: true, user };
     } catch (err) {
       return { success: false, error: err.message };
     }
   });
 
-  // ==========================================
-  // IPC RÔLE ÉDITEUR DE CHAÎNE
-  // ==========================================
-
-  // Vérifier le statut éditeur
-  ipcMain.handle('twitch:check-editor-rights', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token || !sessionData.userId) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const result = await TwitchService.checkEditorRights(sessionData.token, broadcasterId, sessionData.userId);
-      return { success: true, ...result };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
+  // Déconnexion
+  ipcMain.handle('auth:logout', async () => {
+    modActionsClient.stop();
+    return AuthManager.logout();
   });
 
-  // Récupérer les informations actuelles de la chaîne
-  ipcMain.handle('twitch:get-channel-info', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
+  // Tout ce qui touche à Twitch (canaux twitch:*) : voir ipcTwitch.js
+  registerTwitchIpc({ modActionsClient });
 
-    try {
-      const info = await TwitchService.getChannelInfo(sessionData.token, broadcasterId);
-      return { success: true, info };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
+  // Onglets, mise à jour : pilotés uniquement par la page de la fenêtre principale
+  const fromMainPage = (event) => mainWindow && event.sender === mainWindow.webContents;
 
-  // Modifier les informations du stream (titre, jeu, tags, langue)
-  ipcMain.handle('twitch:modify-channel-info', async (event, broadcasterId, data) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    if (!/^\d+$/.test(String(broadcasterId))) {
-      return { success: false, error: 'Identifiant de chaîne invalide' };
-    }
-
-    try {
-      if (String(broadcasterId) === String(sessionData.userId)) {
-        await TwitchService.modifyChannelInfo(sessionData.token, broadcasterId, data);
-        return { success: true };
-      }
-      // Chaîne d'un autre : l'API officielle refuse les éditeurs, on passe par la session de la Vue Twitch officielle
-      const info = await TwitchService.getChannelInfo(sessionData.token, broadcasterId);
-      const result = await updateChannelViaWeb(session, {
-        broadcasterId,
-        title: String(data?.title ?? info?.title ?? ''),
-        gameId: String(data?.game_id ?? info?.game_id ?? ''),
-        gameName: String(data?.game_name ?? info?.game_name ?? ''),
-        language: info?.broadcaster_language || 'fr',
-        tags: Array.isArray(data?.tags) ? data.tags.map(String) : (info?.tags || [])
-      });
-      if (result.needsWebLogin) {
-        return { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour modifier la chaîne d\'un autre streamer.' };
-      }
-      return result;
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // Recherche de catégories / jeux dans le catalogue Twitch
-  ipcMain.handle('twitch:search-categories', async (event, query) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const games = await TwitchService.searchCategories(sessionData.token, query);
-      return { success: true, games };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // Déclencher une coupure publicitaire
-  ipcMain.handle('twitch:start-commercial', async (event, broadcasterId, length) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    if (!/^\d+$/.test(String(broadcasterId))) {
-      return { success: false, error: 'Identifiant de chaîne invalide' };
-    }
-
-    try {
-      if (String(broadcasterId) !== String(sessionData.userId)) {
-        // Chaîne d'un autre : l'API officielle refuse les éditeurs, on passe par la session de la Vue Twitch officielle
-        const result = await startAdViaWeb(session, broadcasterId, length);
-        if (result.needsWebLogin) {
-          return { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour lancer une pub sur la chaîne d\'un autre streamer.' };
-        }
-        return result;
-      }
-      const res = await TwitchService.startCommercial(sessionData.token, broadcasterId, length);
-      return { success: true, result: res };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // Délai avant la prochaine pub possible (session de la Vue Twitch officielle)
-  ipcMain.handle('twitch:get-ad-cooldown', async (event, login) => {
-    if (!/^[a-zA-Z0-9_]{1,25}$/.test(String(login))) {
-      return { success: false, error: 'Pseudo de chaîne invalide' };
-    }
-    try {
-      return await fetchAdCooldown(session, String(login).toLowerCase());
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  // Créer un marqueur de stream
-  ipcMain.handle('twitch:create-stream-marker', async (event, broadcasterId, description) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) {
-      return { success: false, error: 'Non authentifié' };
-    }
-
-    try {
-      const res = await TwitchService.createStreamMarker(sessionData.token, broadcasterId, description);
-      return { success: true, marker: res };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-
-  // Predictions
-  // Prédictions : API officielle sur sa propre chaîne ; sur celle d'un autre (refusée par l'API officielle),
-  // session de la Vue Twitch officielle, comme la Mod View de twitch.tv
-  const isOtherChannel = (sessionData, broadcasterId) => String(broadcasterId) !== String(sessionData.userId);
-  const webPredictionResult = (res) => (res.needsWebLogin
-    ? { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour gérer les prédictions de cette chaîne.' }
-    : { success: res.success, data: res.data, error: res.error });
-
-  ipcMain.handle('twitch:get-predictions', async (event, broadcasterId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
-    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
-    try {
-      if (isOtherChannel(sessionData, broadcasterId)) {
-        const user = await TwitchService.getUserInfo(sessionData.token, broadcasterId);
-        if (!user?.login) return { success: false, error: 'Chaîne introuvable' };
-        return webPredictionResult(await getPredictionsViaWeb(session, user.login));
-      }
-      const data = await TwitchService.getPredictions(sessionData.token, broadcasterId);
-      return { success: true, data };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  ipcMain.handle('twitch:create-prediction', async (event, broadcasterId, predData) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
-    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
-    try {
-      if (isOtherChannel(sessionData, broadcasterId)) {
-        return webPredictionResult(await createPredictionViaWeb(session, broadcasterId, predData || {}));
-      }
-      const data = await TwitchService.createPrediction(sessionData.token, broadcasterId, predData);
-      return { success: true, data };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
-  ipcMain.handle('twitch:update-prediction', async (event, broadcasterId, predictionId, status, winningOutcomeId) => {
-    const sessionData = AuthManager.getSession();
-    if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
-    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
-    try {
-      if (isOtherChannel(sessionData, broadcasterId)) {
-        return webPredictionResult(await updatePredictionViaWeb(session, predictionId, status, winningOutcomeId));
-      }
-      const data = await TwitchService.updatePrediction(sessionData.token, broadcasterId, predictionId, status, winningOutcomeId);
-      return { success: true, data };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-  // Recherche de mise à jour, voie bêta ou normale (rien en développement)
-  // Bouton « Mettre à jour » de l'en-tête (mode automatique, mise à jour déjà téléchargée)
+  // Icône de mise à jour de l'en-tête (mode automatique, mise à jour déjà téléchargée)
   ipcMain.handle('app:install-update', async (event) => {
-    if (!mainWindow || event.sender !== mainWindow.webContents) return { success: false };
+    if (!fromMainPage(event)) return { success: false };
     return { success: updater.installNow() };
   });
 
+  // Recherche de mise à jour, voie bêta ou normale (rien en développement)
   ipcMain.handle('app:check-updates', async (event, beta, manual, auto) => {
     if (!app.isPackaged) return { success: false, error: 'version de développement' };
     try {
@@ -745,9 +317,7 @@ function setupIpcHandlers() {
     return { version: app.getVersion(), buildDate, isPackaged: app.isPackaged };
   });
 
-  // Onglets de chaînes, pilotés uniquement par la page de la fenêtre principale
-  const fromMainPage = (event) => mainWindow && event.sender === mainWindow.webContents;
-  const isChannelId = (id) => /^\d+$/.test(String(id));
+  // Onglets de chaînes
 
   ipcMain.handle('tabs:open', async (event, broadcasterId) => {
     if (!fromMainPage(event) || !isChannelId(broadcasterId)) return { success: false, error: 'Onglet invalide' };

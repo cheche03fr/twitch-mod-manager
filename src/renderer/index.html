@@ -704,22 +704,8 @@
           </label>
         </div>
         <p class="settings-hint"><strong>Bêta</strong> : nouveautés en avant-première, parfois moins stables ; désactiver ne revient pas en arrière. <strong>Automatiques</strong> : téléchargement sans question, puis une icône de mise à jour à côté de ⚙️ ; sinon installation au prochain démarrage.</p>
-        <button type="button" id="btn-check-updates" class="setting-btn setting-btn-action">
-          <svg class="update-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <g class="update-icon-cycle">
-              <path d="M19.4 9.2A8 8 0 0 0 6 6.3"></path>
-              <path d="M5.4 3.4v3.4h3.4"></path>
-              <path d="M4.6 14.8A8 8 0 0 0 18 17.7"></path>
-              <path d="M18.6 20.6v-3.4h-3.4"></path>
-            </g>
-            <g class="update-icon-arrow">
-              <path d="M12 7.6v3.4"></path>
-              <path d="M9.4 11.2h5.2L12 14.2z"></path>
-              <path d="M9.2 16.4h5.6"></path>
-            </g>
-          </svg>
-          Rechercher une mise à jour
-        </button>
+        <!-- Le logo de mise à jour est copié depuis l'icône de l'en-tête (settingsPanel.js) -->
+        <button type="button" id="btn-check-updates" class="setting-btn setting-btn-action">Rechercher une mise à jour</button>
         <span id="update-check-status" class="settings-hint" role="status"></span>
       </div>
 
@@ -741,5 +727,12 @@
   <script src="modActions.js"></script>
   <script src="gridLayout.js"></script>
   <script src="renderer.js"></script>
+  <script src="channelList.js"></script>
+  <script src="channelTabs.js"></script>
+  <script src="gridCustomization.js"></script>
+  <script src="moderationPanel.js"></script>
+  <script src="editorPanel.js"></script>
+  <script src="settingsPanel.js"></script>
+  <script src="predictionsPanel.js"></script>
 </body>
 </html>

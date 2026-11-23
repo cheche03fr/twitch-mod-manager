@@ -3,7 +3,7 @@
 // shortcut: empreintes persistées relevées en novembre 2026, elles cassent si Twitch les change ; les relever alors
 // en modifiant les infos du stream dans la Vue Twitch officielle.
 const crypto = require('crypto');
-const { postTwitchGql } = require('./twitchModLog');
+const { runTwitchGql, gqlError } = require('./twitchModLog');
 
 const BROADCAST_SETTINGS_HASH = '856e69184d9d3aa37529d1cec489a164807eff0c6264b20832d06b669ee80ea5';
 const FREEFORM_TAGS_HASH = '8aaac5a848941ff6a26bacb44b6b251909c77b84f39ce6eced8f4c694036fc08';
@@ -26,22 +26,9 @@ function buildChannelEditOperations({ broadcasterId, title, gameId, gameName, la
   ];
 }
 
-// Première erreur d'une réponse GraphQL (erreur globale ou champ « error » d'une mutation), null si tout a réussi
-function gqlError(json) {
-  for (const result of [].concat(json)) {
-    if (result?.errors?.length) return result.errors[0].message || 'erreur inconnue';
-    for (const value of Object.values(result?.data || {})) {
-      if (value?.error) return value.error.code || value.error.message || 'erreur inconnue';
-    }
-  }
-  return null;
-}
-
 async function updateChannelViaWeb(electronSession, fields) {
-  const { needsWebLogin, json } = await postTwitchGql(electronSession, buildChannelEditOperations(fields));
-  if (needsWebLogin) return { success: false, needsWebLogin: true };
-  const error = gqlError(json);
-  return error ? { success: false, error: `Twitch a refusé la modification : ${error}` } : { success: true };
+  const res = await runTwitchGql(electronSession, buildChannelEditOperations(fields), 'Twitch a refusé la modification');
+  return res.success ? { success: true } : res;
 }
 
 // Comme la tuile « Lancer une pub » du Gestionnaire de stream (commercialID : identifiant aléatoire de la demande)
@@ -57,11 +44,9 @@ function buildStartAdOperation(broadcasterId, lengthSeconds, commercialID) {
 
 async function startAdViaWeb(electronSession, broadcasterId, lengthSeconds) {
   const commercialID = crypto.randomUUID().replace(/-/g, '');
-  const { needsWebLogin, json } = await postTwitchGql(electronSession, [buildStartAdOperation(broadcasterId, lengthSeconds, commercialID)]);
-  if (needsWebLogin) return { success: false, needsWebLogin: true };
-  const error = gqlError(json);
-  if (error === 'RATE_LIMITED') return { success: false, error: 'Une pub a été lancée il y a peu : Twitch impose un délai avant la suivante, réessaie dans quelques minutes.' };
-  return error ? { success: false, error: `Twitch a refusé la pub : ${error}` } : { success: true };
+  const res = await runTwitchGql(electronSession, [buildStartAdOperation(broadcasterId, lengthSeconds, commercialID)], 'Twitch a refusé la pub');
+  if (res.code === 'RATE_LIMITED') return { success: false, error: 'Une pub a été lancée il y a peu : Twitch impose un délai avant la suivante, réessaie dans quelques minutes.' };
+  return res.success ? { success: true } : res;
 }
 
 // Délai entre deux pubs, comme la tuile du Gestionnaire de stream (lecture seule)
@@ -80,13 +65,8 @@ function parseAdCooldown(json, now = Date.now()) {
 }
 
 async function fetchAdCooldown(electronSession, login) {
-  const { needsWebLogin, json } = await postTwitchGql(electronSession, [{
-    operationName: 'AdFrequencyQuery', variables: { login }, hash: AD_FREQUENCY_HASH
-  }]);
-  if (needsWebLogin) return { success: false, needsWebLogin: true };
-  const error = gqlError(json);
-  if (error) return { success: false, error };
-  return { success: true, cooldownEndsAt: parseAdCooldown(json) };
+  const res = await runTwitchGql(electronSession, [{ operationName: 'AdFrequencyQuery', variables: { login }, hash: AD_FREQUENCY_HASH }]);
+  return res.success ? { success: true, cooldownEndsAt: parseAdCooldown(res.json) } : res;
 }
 
 module.exports = {

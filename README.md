@@ -113,6 +113,12 @@ npm start        # ou double-clic sur Lancer.bat
 npm test
 ```
 
+L'historique complet du développement, version par version, est dans le [📓 Devlog](DEVLOG.md).
+
+Organisation du code :
+- **Processus principal** : `main.js` (fenêtre, onglets, connexion, mises à jour), `ipcTwitch.js` (tous les échanges `twitch:*` avec la page, avec vérification commune de la session et des identifiants), `twitchService.js` (API officielle Helix, via une fonction commune `helix()`), `twitchModLog.js` / `twitchChannelEdit.js` / `twitchPredictions.js` (API interne de Twitch, via `runTwitchGql()`), `updater.js`, `authManager.js` + `sessionSeal.js`.
+- **Page** (`src/renderer/`) : `renderer.js` (état, éléments, démarrage, utilitaires comme `setFeedback`), puis un fichier par partie : `channelList.js`, `channelTabs.js`, `gridCustomization.js`, `moderationPanel.js`, `editorPanel.js`, `settingsPanel.js`, `predictionsPanel.js`.
+
 L'application tourne sur **Electron 45** (Chromium 156). Depuis Electron 42, le programme Electron est téléchargé au premier lancement de `npm start`, et non plus pendant `npm install`.
 
 Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile, signe l'installeur et crée la release ; les applications installées se mettent à jour automatiquement.

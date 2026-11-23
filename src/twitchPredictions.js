@@ -2,8 +2,7 @@
 // (API GraphQL interne : l'API officielle réserve les prédictions au propriétaire de la chaîne).
 // shortcut: empreintes persistées relevées en novembre 2026, elles cassent si Twitch les change ; les relever alors
 // en gérant une prédiction dans la Vue Twitch officielle.
-const { postTwitchGql } = require('./twitchModLog');
-const { gqlError } = require('./twitchChannelEdit');
+const { runTwitchGql } = require('./twitchModLog');
 
 const HASHES = {
   ChannelPointsPredictionContext: 'd364abb25d0ad06fc973de923fb10a7631c6cfb4ef7d24cd3e9811593db09ccd',
@@ -74,13 +73,11 @@ function buildUpdatePredictionOperation(predictionId, status, winningOutcomeId) 
 }
 
 async function sendPredictionOperation(electronSession, op) {
-  const { needsWebLogin, json } = await postTwitchGql(electronSession, [op]);
-  if (needsWebLogin) return { success: false, needsWebLogin: true };
-  const error = gqlError(json);
-  if (error === 'EVENT_NOT_ACTIVE') {
+  const res = await runTwitchGql(electronSession, [op]);
+  if (res.code === 'EVENT_NOT_ACTIVE') {
     return { success: false, error: 'La prédiction n\'est plus ouverte aux votes : le temps est écoulé et Twitch l\'a déjà verrouillée. Choisis maintenant le gagnant.' };
   }
-  return error ? { success: false, error: `Twitch a refusé : ${error}` } : { success: true, json };
+  return res;
 }
 
 async function getPredictionsViaWeb(electronSession, login) {

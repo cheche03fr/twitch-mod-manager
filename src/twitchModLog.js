@@ -87,6 +87,28 @@ async function postTwitchGql(electronSession, operations) {
   return { json: await response.json() };
 }
 
+// Première erreur d'une réponse GraphQL (erreur globale ou champ « error » d'une mutation), null si tout a réussi
+function gqlError(json) {
+  for (const result of [].concat(json)) {
+    if (result?.errors?.length) return result.errors[0].message || 'erreur inconnue';
+    for (const value of Object.values(result?.data || {})) {
+      if (value?.error) return value.error.code || value.error.message || 'erreur inconnue';
+    }
+  }
+  return null;
+}
+
+/**
+ * Envoie des opérations et lit la réponse : { success: true, json }, { success: false, needsWebLogin: true }
+ * sans session twitch.tv, ou { success: false, code, error } si Twitch refuse (error = « refusal : code »).
+ */
+async function runTwitchGql(electronSession, operations, refusal = 'Twitch a refusé') {
+  const { needsWebLogin, json } = await postTwitchGql(electronSession, operations);
+  if (needsWebLogin) return { success: false, needsWebLogin: true };
+  const code = gqlError(json);
+  return code ? { success: false, code, error: `${refusal} : ${code}` } : { success: true, json };
+}
+
 /**
  * Charge l'historique des actions de modération d'une chaîne.
  */
@@ -100,4 +122,4 @@ async function fetchTwitchModLog(electronSession, broadcasterId) {
   return { success: true, entries: parseModActionLogs(json) };
 }
 
-module.exports = { parseModActionLogs, fetchTwitchModLog, postTwitchGql };
+module.exports = { parseModActionLogs, fetchTwitchModLog, postTwitchGql, runTwitchGql, gqlError };

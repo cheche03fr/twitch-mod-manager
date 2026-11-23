@@ -113,7 +113,6 @@ const dom = {
   durationPresets: document.querySelectorAll('.preset-btn'),
   banReasonInput: document.getElementById('ban-reason-input'),
   btnApplySanction: document.getElementById('btn-apply-sanction'),
-  btnUnban: document.getElementById('btn-unban'),
   banFeedback: document.getElementById('ban-feedback'),
   toggleSlowMode: document.getElementById('toggle-slow-mode'),
   toggleSubMode: document.getElementById('toggle-sub-mode'),
@@ -271,12 +270,12 @@ function setupEventListeners() {
     btn.addEventListener('click', () => {
       dom.durationPresets.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      state.selectedSanctionDuration = Number(btn.dataset.duration);
+      // « Débannir » est un choix comme les durées : Appliquer lève alors le ban
+      state.selectedSanctionDuration = btn.dataset.duration === 'unban' ? 'unban' : Number(btn.dataset.duration);
     });
   });
 
   dom.btnApplySanction.addEventListener('click', applySanction);
-  dom.btnUnban.addEventListener('click', unbanTarget);
 
   // Contrôles du chat
   dom.toggleSlowMode.addEventListener('change', (e) => updateChatSetting({ slow_mode: e.target.checked, slow_mode_wait_time: 3 }));
@@ -1416,7 +1415,6 @@ function adaptBanForm(canBan) {
   dom.banUserInput.disabled = !canBan;
   dom.banReasonInput.disabled = !canBan;
   dom.btnApplySanction.disabled = !canBan;
-  dom.btnUnban.disabled = !canBan;
   dom.durationPresets.forEach(btn => btn.disabled = !canBan);
 }
 
@@ -1433,7 +1431,7 @@ async function unbanTarget() {
     return;
   }
 
-  dom.btnUnban.disabled = true;
+  dom.btnApplySanction.disabled = true;
   dom.banFeedback.innerText = 'Débannissement...';
   dom.banFeedback.className = 'action-feedback';
   try {
@@ -1450,7 +1448,7 @@ async function unbanTarget() {
     dom.banFeedback.innerText = `Erreur : ${err.message}`;
     dom.banFeedback.className = 'action-feedback error';
   } finally {
-    dom.btnUnban.disabled = false;
+    dom.btnApplySanction.disabled = false;
   }
 }
 
@@ -1481,6 +1479,7 @@ function adaptShieldButton(canShield, shieldMode) {
  */
 async function applySanction() {
   if (!state.currentChannel) return;
+  if (state.selectedSanctionDuration === 'unban') return unbanTarget();
 
   const targetUser = dom.banUserInput.value.trim();
   if (!targetUser) {

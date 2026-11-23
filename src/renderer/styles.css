@@ -1116,6 +1116,9 @@ button {
 .btn-danger-text {
   color: #ff6b6b;
 }
+/* « Débannir » : choix comme les durées, sur sa propre ligne, en vert */
+.preset-unban { grid-column: 1 / -1; color: #2ecc71; }
+.preset-unban.active { background: var(--bg-hover); border-color: #2ecc71; color: #2ecc71; } /* sélectionné : gris, texte et bord verts */
 
 .btn-block {
   width: 100%;

@@ -52,7 +52,7 @@ Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête
 - Dans une fenêtre étroite (moins de 1100 px), les panneaux s'empilent sur toute la largeur.
 
 - **Stream et chat intégrés** côte à côte.
-- **Sanctions** : timeout ou ban d'un pseudo, avec motif ; le bouton **✅ Débannir** lève le ban ou l'exclusion du pseudo saisi.
+- **Sanctions** : timeout ou ban d'un pseudo, avec motif. Le choix **Débannir** (en vert), sous les durées, s'applique comme elles : sélectionnez-le, puis **Appliquer** lève le ban ou l'exclusion du pseudo saisi.
 - **Purge du chat** et **mode bouclier**.
 - **Paramètres du chat** : mode lent, abonnés, émotes uniquement, followers.
 - **Liste des spectateurs** présents dans le chat, avec recherche.

@@ -6,16 +6,21 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+# Lecture seule par défaut : seul le job « release » peut écrire dans le dépôt,
+# pour qu'une dépendance npm piratée pendant la compilation ne puisse pas modifier les releases
 permissions:
-  contents: write # créer les releases dans ce dépôt
+  contents: read
 
+# Actions figées par empreinte de commit (un tag @v4 peut être déplacé) ; la version est en commentaire
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -29,23 +34,40 @@ jobs:
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
 
       # Signature avec le certificat cheche03fr (dépôt privé "certificat", secrets ajoutés par ajouter-au-projet.ps1)
+      # Les secrets ne sont donnés qu'à cette étape
       - run: npm run dist
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: twitch-mod-manager-setup
-          path: dist/*.exe
+          if-no-files-found: error
+          path: |
+            dist/Twitch-Mod-Manager-Setup-*.exe
+            dist/*.blockmap
+            dist/latest.yml
 
-      # Tag v* : publie installeur + fichier de mise à jour dans les Releases de ce dépôt (source des mises à jour auto)
-      # Tag v1.2.3-beta.1 : pré-version, ignorée par les apps sans « Recevoir les versions bêta »
-      # (elles ne lisent que la dernière release normale)
-      - if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
+  # Tag v* : publie installeur + fichier de mise à jour dans les Releases de ce dépôt (source des mises à jour auto)
+  # Tag v1.2.3-beta.1 : pré-version, ignorée par les apps sans « Recevoir les versions bêta »
+  # (elles ne lisent que la dernière release normale)
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # créer la release ; ce job n'installe aucune dépendance npm
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: twitch-mod-manager-setup
+          path: dist
+
+      - shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then
             extra=(--prerelease --notes "Version bêta : proposée seulement si « Recevoir les versions bêta » est coché dans les Paramètres.")

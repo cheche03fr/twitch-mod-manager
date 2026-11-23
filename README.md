@@ -105,6 +105,8 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 - La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur), et envoi et réception des chuchotements.
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
+- Le petit serveur interne (connexion Twitch et pages de l'app) n'écoute que sur votre PC (`127.0.0.1`) et ne sert que les fichiers de l'application.
+- **Compilation** : les actions GitHub sont figées par empreinte, la compilation n'a qu'un accès en lecture au dépôt, et seule l'étape finale, qui n'installe aucune dépendance, peut créer la release. Le certificat de signature n'est donné qu'à l'étape de signature.
 
 ---
 
@@ -124,7 +126,7 @@ Organisation du code :
 
 L'application tourne sur **Electron 45** (Chromium 156). Depuis Electron 42, le programme Electron est téléchargé au premier lancement de `npm start`, et non plus pendant `npm install`.
 
-Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile, signe l'installeur et crée la release ; les applications installées se mettent à jour automatiquement.
+Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile et signe l'installeur (job `build`), puis crée la release (job `release`) ; les applications installées se mettent à jour automatiquement.
 
 Publier une bêta : `git tag v1.2.3-beta.1; git push origin v1.2.3-beta.1`. La release est marquée « pré-version » et n'est proposée qu'aux applications où la case bêta est cochée.
 

@@ -4,4 +4,8 @@ dist/
 src/build-info.json
 # Contient le jeton Twitch : ne jamais publier
 data/
+# Certificat de signature et son mot de passe : uniquement dans les secrets GitHub
+*.pfx
+*.p12
+mot-de-passe.txt
 *.lnk

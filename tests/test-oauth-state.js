@@ -20,8 +20,26 @@ const localServer = require('../src/localServer');
   res = await fetch(`${base}/save-token?access_token=pirate&state=bon-state`);
   assert.strictEqual(res.status, 403, 'state déjà utilisé : refusé');
 
+  // Fichiers statiques : rien en dehors de renderer/ et assets/
+  const path = require('path');
+  const { staticFilePath } = localServer;
+  assert.strictEqual(staticFilePath('/'), path.join(__dirname, '..', 'src', 'renderer', 'index.html'));
+  assert.strictEqual(staticFilePath('/styles.css'), path.join(__dirname, '..', 'src', 'renderer', 'styles.css'));
+  assert.strictEqual(staticFilePath('/assets/icon.png'), path.join(__dirname, '..', 'assets', 'icon.png'));
+  for (const evil of ['/../main.js', '/assets/../src/main.js', '/..\\..\\package.json', '/assets/', '/C:/Windows/win.ini']) {
+    const p = staticFilePath(evil);
+    assert.ok(p === null || p.startsWith(path.join(__dirname, '..', 'src', 'renderer') + path.sep), `refusé : ${evil}`);
+  }
+  for (const evil of ['/..%2F..%2Fpackage.json', '/%2e%2e/main.js']) {
+    res = await fetch(base + evil);
+    assert.strictEqual(res.status, 404, `404 : ${evil}`);
+  }
+  res = await fetch(`${base}/styles.css`);
+  assert.strictEqual(res.status, 200, 'fichier normal servi');
+
   localServer.stop();
   console.log('✅ Contrôle du state OAuth OK');
+  console.log('✅ Fichiers statiques limités à renderer/ et assets/ OK');
 
   // Fichier de session : jeton chiffré, ancien fichier en clair relu puis à réécrire chiffré
   const { sealSession, openSession } = require('../src/sessionSeal');

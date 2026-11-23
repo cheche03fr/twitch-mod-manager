@@ -15,6 +15,18 @@ const MIME_TYPES = {
   '.json': 'application/json'
 };
 
+const RENDERER_DIR = path.join(__dirname, 'renderer');
+const ASSETS_DIR = path.join(__dirname, '..', 'assets');
+
+/** Chemin d'URL -> fichier servi, null s'il sortirait de renderer/ ou assets/ (« .. », chemin encodé…). */
+function staticFilePath(pathname) {
+  const [root, rest] = pathname.startsWith('/assets/')
+    ? [ASSETS_DIR, pathname.slice('/assets/'.length)]
+    : [RENDERER_DIR, pathname === '/' ? 'index.html' : pathname.slice(1)];
+  const filePath = path.resolve(root, rest);
+  return filePath.startsWith(root + path.sep) ? filePath : null;
+}
+
 class LocalServer {
   constructor() {
     this.server = null;
@@ -110,16 +122,9 @@ class LocalServer {
         }
 
         // 3. Fichiers Statiques (Renderer & Assets)
-        let filePath = '';
-        if (reqUrl.pathname.startsWith('/assets/')) {
-          filePath = path.join(__dirname, '..', reqUrl.pathname);
-        } else if (reqUrl.pathname === '/' || reqUrl.pathname === '/index.html') {
-          filePath = path.join(__dirname, 'renderer', 'index.html');
-        } else {
-          filePath = path.join(__dirname, 'renderer', reqUrl.pathname);
-        }
+        const filePath = staticFilePath(reqUrl.pathname);
 
-        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        if (filePath && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
           const ext = path.extname(filePath).toLowerCase();
           const contentType = MIME_TYPES[ext] || 'application/octet-stream';
           res.writeHead(200, { 'Content-Type': contentType });
@@ -169,3 +174,4 @@ class LocalServer {
 }
 
 module.exports = new LocalServer();
+module.exports.staticFilePath = staticFilePath;

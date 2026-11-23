@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupChannelTabs();
   setupGridCustomization();
   setupPredictionsWidget();
+  setupWhispersPanel();
   setupFooter();
   setupSettings();
   await checkExistingSession();

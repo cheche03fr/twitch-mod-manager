@@ -2124,3 +2124,45 @@ body.is-panel-dragging, body.is-panel-dragging .widget-header { cursor: grabbing
 /* Connexion automatique / onglet de chaîne : pas de page de connexion pendant la vérification de la session */
 .auto-login #auth-screen,
 .in-tab #auth-screen { display: none; }
+
+/* ========================================================
+   Chuchotements
+   ======================================================== */
+.whispers-body { gap: 8px; }
+.whispers-view { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.whispers-view.hidden { display: none; }
+.whispers-form { display: flex; gap: 6px; }
+.whispers-form input { flex: 1; min-width: 0; }
+.whispers-unread {
+  min-width: 18px; padding: 1px 6px; border-radius: 9px;
+  background: var(--twitch-purple); color: #fff; font-size: 11px; font-weight: 700; text-align: center;
+}
+.whispers-unread.hidden { display: none; }
+.whispers-avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; background: var(--bg-tertiary); }
+.whispers-avatar[src=""] { visibility: hidden; }
+.whispers-threads { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-y: auto; max-height: 260px; }
+.whispers-thread {
+  display: flex; align-items: center; gap: 10px; padding: 7px 6px;
+  border-bottom: 1px solid var(--border-subtle); border-radius: var(--radius-sm); cursor: pointer;
+}
+.whispers-thread:hover { background: var(--bg-hover); }
+.whispers-thread:focus-visible { outline: 2px solid var(--twitch-purple); outline-offset: -2px; }
+.whispers-thread-text { flex: 1; min-width: 0; }
+.whispers-thread-name { font-size: 13px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whispers-thread-preview { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whispers-badge {
+  min-width: 18px; padding: 1px 6px; border-radius: 9px;
+  background: #2ecc71; color: #fff; font-size: 11px; font-weight: 700; text-align: center;
+}
+.whispers-thread-header { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border-subtle); }
+.whispers-messages {
+  display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 260px; min-height: 120px;
+  padding: 6px; background: var(--bg-primary); border-radius: var(--radius-sm);
+}
+.whispers-message {
+  align-self: flex-start; max-width: 80%; padding: 6px 10px;
+  border-radius: 12px 12px 12px 4px; background: var(--bg-tertiary); color: var(--text-primary);
+}
+.whispers-message.mine { align-self: flex-end; border-radius: 12px 12px 4px 12px; background: var(--twitch-purple); color: #fff; }
+.whispers-message-text { font-size: 13px; line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.whispers-message-time { font-size: 10px; opacity: 0.7; margin-top: 2px; text-align: right; }

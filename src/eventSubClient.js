@@ -20,33 +20,52 @@ function hasModActionsScopes(scopes) {
   return MOD_ACTIONS_SCOPES.every(choices => choices.some(s => scopes.includes(s)));
 }
 
+// Réception des chuchotements (user.whisper.message)
+function hasWhisperScopes(scopes) {
+  return scopes.includes('user:read:whispers') || scopes.includes('user:manage:whispers');
+}
+
 /**
- * Reçoit en direct les actions de modération (raids, VIP, bans...) via EventSub WebSocket.
+ * Reçoit en direct, via EventSub WebSocket, les actions de modération (raids, VIP, bans...) des chaînes
+ * et les chuchotements reçus par le compte connecté.
  * shortcut: rien n'est rejoué après une coupure (limite de Twitch), l'historique se remplit tant que l'app tourne.
  */
 class EventSubClient {
-  constructor({ onAction, onError }) {
+  constructor({ onAction, onWhisper, onError }) {
     this.onAction = onAction;
+    this.onWhisper = onWhisper;
     this.onError = onError;
     this.ws = null;
     this.sessionId = null;
     this.stopped = true;
-    this.wanted = new Set();
+    this.wanted = new Map(); // clé (identifiant de chaîne, ou « whisper:<compte> ») -> { type, version, condition }
     this.subscribed = new Set();
     this.keepaliveTimer = null;
     this.keepaliveMs = 10000;
   }
 
-  start(token, moderatorId, broadcasterIds) {
+  // Ajoute des abonnements voulus, puis se connecte ou s'abonne à ceux qui manquent
+  want(token, entries) {
     this.token = token;
-    this.moderatorId = moderatorId;
     this.stopped = false;
-    broadcasterIds.forEach(id => this.wanted.add(id));
+    entries.forEach(([key, spec]) => this.wanted.set(key, spec));
     if (!this.ws) {
       this.connect(WS_URL, null);
     } else if (this.sessionId) {
       this.subscribeMissing();
     }
+  }
+
+  start(token, moderatorId, broadcasterIds) {
+    this.want(token, broadcasterIds.map(id => [id, {
+      type: 'channel.moderate',
+      version: '2',
+      condition: { broadcaster_user_id: id, moderator_user_id: moderatorId }
+    }]));
+  }
+
+  startWhispers(token, userId) {
+    this.want(token, [[`whisper:${userId}`, { type: 'user.whisper.message', version: '1', condition: { user_id: userId } }]]);
   }
 
   stop() {
@@ -101,6 +120,8 @@ class EventSubClient {
       this.connect(msg.payload.session.reconnect_url, ws);
     } else if (type === 'notification' && msg.payload?.subscription?.type === 'channel.moderate') {
       this.onAction({ receivedAt: msg.metadata.message_timestamp, event: msg.payload.event });
+    } else if (type === 'notification' && msg.payload?.subscription?.type === 'user.whisper.message') {
+      this.onWhisper?.(whisperFromEvent(msg.payload.event, msg.metadata.message_timestamp));
     }
     if (this.ws === ws) this.armKeepalive(ws);
   }
@@ -112,11 +133,12 @@ class EventSubClient {
   }
 
   subscribeMissing() {
-    [...this.wanted].filter(id => !this.subscribed.has(id)).forEach(id => this.subscribe(id));
+    [...this.wanted.keys()].filter(key => !this.subscribed.has(key)).forEach(key => this.subscribe(key));
   }
 
-  async subscribe(broadcasterId) {
-    this.subscribed.add(broadcasterId);
+  async subscribe(key) {
+    const spec = this.wanted.get(key);
+    this.subscribed.add(key);
     try {
       const response = await fetch('https://api.twitch.tv/helix/eventsub/subscriptions', {
         method: 'POST',
@@ -125,21 +147,29 @@ class EventSubClient {
           'Authorization': `Bearer ${this.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          type: 'channel.moderate',
-          version: '2',
-          condition: { broadcaster_user_id: broadcasterId, moderator_user_id: this.moderatorId },
-          transport: { method: 'websocket', session_id: this.sessionId }
-        })
+        body: JSON.stringify({ ...spec, transport: { method: 'websocket', session_id: this.sessionId } })
       });
       if (!response.ok && response.status !== 409) {
         throw new Error(`abonnement refusé (${response.status}) : ${await response.text()}`);
       }
     } catch (err) {
-      this.subscribed.delete(broadcasterId);
-      this.onError(broadcasterId, err.message);
+      this.subscribed.delete(key);
+      this.onError(key, err.message);
     }
   }
 }
 
-module.exports = { EventSubClient, hasModActionsScopes };
+/** Événement user.whisper.message -> chuchotement transmis à la page. */
+function whisperFromEvent(event, receivedAt) {
+  return {
+    id: event.whisper_id,
+    fromId: String(event.from_user_id),
+    fromLogin: event.from_user_login,
+    fromName: event.from_user_name,
+    toId: String(event.to_user_id),
+    text: event.whisper?.text || '',
+    sentAt: receivedAt || new Date().toISOString()
+  };
+}
+
+module.exports = { EventSubClient, hasModActionsScopes, hasWhisperScopes, whisperFromEvent };

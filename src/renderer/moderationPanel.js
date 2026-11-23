@@ -75,6 +75,7 @@ async function openModerationScreen(channel) {
   loadEditorStatusAndInfo(channel);
   // Chargement widgets additionnels
   loadPredictions(channel.id);
+  loadWhispersPanel();
   setTimeout(setupPredictionsWidget, 300);
 }
 

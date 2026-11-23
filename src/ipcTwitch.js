@@ -3,7 +3,8 @@
 const { ipcMain, session } = require('electron');
 const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
-const { hasModActionsScopes } = require('./eventSubClient');
+const { hasModActionsScopes, hasWhisperScopes } = require('./eventSubClient');
+const { whisperThreadId, fetchWhisperThreads, fetchWhisperThread } = require('./twitchWhispers');
 const { fetchTwitchModLog } = require('./twitchModLog');
 const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
 const { getPredictionsViaWeb, createPredictionViaWeb, updatePredictionViaWeb } = require('./twitchPredictions');
@@ -194,11 +195,60 @@ function registerPredictionHandlers() {
   });
 }
 
+const WHISPER_MAX_LENGTH = 10000; // 500 pour un premier message à quelqu'un : Twitch tronque au-delà
+
+// Code HTTP de l'envoi d'un chuchotement -> message clair (401 : téléphone non vérifié si le droit est accordé)
+const WHISPER_ERRORS = {
+  400: 'Message refusé par Twitch (vide ou contenant des mots bloqués).',
+  401: 'Twitch refuse l\'envoi : ton compte doit avoir un numéro de téléphone vérifié (Paramètres Twitch > Sécurité et confidentialité).',
+  403: 'Cette personne n\'accepte pas tes chuchotements (chuchotements désactivés, blocage ou inconnus refusés).',
+  404: 'Destinataire introuvable ou suspendu.',
+  429: 'Limite de chuchotements atteinte (40 destinataires différents par jour, 100 messages par minute).'
+};
+
+// Chuchotements : envoi et réception en direct par l'API officielle, historique par l'API interne de Twitch
+function registerWhisperHandlers(modActionsClient) {
+  handleTwitch('twitch:start-whispers', async ({ token, userId }) => {
+    const validation = await TwitchService.validateToken(token);
+    if (!hasWhisperScopes(validation.scopes || [])) return { success: false, needsReconnect: true };
+    modActionsClient.startWhispers(token, userId);
+    return { success: true, selfId: userId };
+  }, { channelArg: false });
+
+  handleTwitch('twitch:whisper-threads', async ({ userId }) =>
+    webResult(await fetchWhisperThreads(session, userId), 'lire tes chuchotements'), { channelArg: false });
+
+  handleTwitch('twitch:whisper-thread', async ({ userId }, threadId) => {
+    if (!/^\d+_\d+$/.test(String(threadId))) return { success: false, error: 'Conversation invalide' };
+    return webResult(await fetchWhisperThread(session, String(threadId), userId), 'lire tes chuchotements');
+  }, { channelArg: false });
+
+  handleTwitch('twitch:send-whisper', async (sessionData, targetUser, message) => {
+    const text = String(message || '').trim();
+    if (!text) return { success: false, error: 'Message vide.' };
+    if (text.length > WHISPER_MAX_LENGTH) return { success: false, error: `Message trop long (${WHISPER_MAX_LENGTH} caractères au maximum).` };
+    return withTargetUser(sessionData, targetUser, async (toId) => {
+      try {
+        await TwitchService.sendWhisper(sessionData.token, sessionData.userId, toId, text);
+        return { success: true, toId, threadId: whisperThreadId(sessionData.userId, toId) };
+      } catch (err) {
+        const status = Number(/\((\d{3})\)/.exec(err.message)?.[1]);
+        if (status === 401 && !hasWhisperScopes((await TwitchService.validateToken(sessionData.token)).scopes || [])) {
+          return { success: false, needsReconnect: true, error: 'Déconnecte-toi puis reconnecte-toi pour autoriser les chuchotements.' };
+        }
+        if (WHISPER_ERRORS[status]) return { success: false, error: WHISPER_ERRORS[status] };
+        throw err;
+      }
+    });
+  }, { channelArg: false });
+}
+
 function registerTwitchIpc({ modActionsClient }) {
   registerChannelHandlers(modActionsClient);
   registerModerationHandlers();
   registerEditorHandlers();
   registerPredictionHandlers();
+  registerWhisperHandlers(modActionsClient);
 }
 
 module.exports = { registerTwitchIpc, isChannelId };

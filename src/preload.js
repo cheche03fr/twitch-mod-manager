@@ -39,6 +39,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onModAction: (callback) => ipcRenderer.on('twitch:mod-action', (_e, data) => callback(data)),
   onModActionsError: (callback) => ipcRenderer.on('twitch:mod-actions-error', (_e, data) => callback(data)),
 
+  // Chuchotements
+  startWhispers: () => ipcRenderer.invoke('twitch:start-whispers'),
+  getWhisperThreads: () => ipcRenderer.invoke('twitch:whisper-threads'),
+  getWhisperThread: (threadId) => ipcRenderer.invoke('twitch:whisper-thread', threadId),
+  sendWhisper: (targetUser, message) => ipcRenderer.invoke('twitch:send-whisper', targetUser, message),
+  onWhisper: (callback) => ipcRenderer.on('twitch:whisper', (_e, data) => callback(data)),
+
   // Rôle Éditeur de chaîne
   checkEditorRights: (broadcasterId) => ipcRenderer.invoke('twitch:check-editor-rights', broadcasterId),
   getChannelInfo: (broadcasterId) => ipcRenderer.invoke('twitch:get-channel-info', broadcasterId),

@@ -22,6 +22,8 @@ module.exports = {
     'moderator:read:unban_requests',
     'moderator:read:warnings',
     'moderator:read:moderators',
-    'moderator:read:vips'
+    'moderator:read:vips',
+    // Chuchotements : envoi (Helix) et réception en direct (EventSub user.whisper.message)
+    'user:manage:whispers'
   ].join(' ')
 };

@@ -131,4 +131,24 @@ assert.strictEqual(gqlError([{ data: { updateBroadcastSettings: { error: null } 
 assert.strictEqual(gqlError([{ errors: [{ message: 'service error' }] }]), 'service error', 'erreur globale');
 assert.strictEqual(gqlError([{ data: { updateFreeformTags: { error: { code: 'TAG_INVALID' } } } }]), 'TAG_INVALID', 'erreur de mutation');
 
+// Chuchotements : historique par l'API interne, événement en direct
+const { whisperThreadId, parseWhisperThreads, parseWhisperThread } = require('../src/twitchWhispers');
+const { whisperFromEvent, hasWhisperScopes } = require('../src/eventSubClient');
+assert.strictEqual(whisperThreadId('155767436', '74015529'), '74015529_155767436', 'identifiant de conversation trié');
+const person = (id, login) => ({ id, login, displayName: login.toUpperCase(), profileImageURL: `https://img/${login}` });
+const wMsg = (id, from, sentAt, extra = {}) => ({ node: { id, from: { id: from }, content: { content: 'msg ' + id }, sentAt, deletedAt: null, ...extra } });
+const threads = parseWhisperThreads([{ data: { currentUser: { whisperThreads: { edges: [
+  { node: { id: '1_2', participants: [person('1', 'moi'), person('2', 'ancien')], messages: { edges: [wMsg('a', '2', '2026-11-20T10:00:00Z')] }, unreadMessagesCount: 0 } },
+  { node: { id: '1_3', participants: [person('3', 'recent'), person('1', 'moi')], messages: { edges: [wMsg('b', '1', '2026-11-22T10:00:00Z')] }, unreadMessagesCount: 2 } }
+] } } } }], '1');
+assert.deepStrictEqual(threads.map(t => [t.threadId, t.other.login, t.unread]), [['1_3', 'recent', 2], ['1_2', 'ancien', 0]], 'plus récente en premier, interlocuteur = l\'autre');
+const conv = parseWhisperThread([{ data: { whisperThread: { id: '1_2', participants: [person('1', 'moi'), person('2', 'ancien')], messages: { edges: [
+  wMsg('c', '1', '2026-11-22T10:05:00Z'), wMsg('d', '2', '2026-11-22T10:00:00Z'), wMsg('e', '2', '2026-11-22T10:06:00Z', { deletedAt: '2026-11-22T10:07:00Z' })
+] } } } }], '1');
+assert.deepStrictEqual(conv.messages.map(m => m.id), ['d', 'c'], 'ordre chronologique, messages supprimés retirés');
+assert.deepStrictEqual(parseWhisperThread([{ data: { whisperThread: null } }], '1').messages, [], 'pas encore de conversation');
+assert.deepStrictEqual(whisperFromEvent({ whisper_id: 'w1', from_user_id: 2, from_user_login: 'ancien', from_user_name: 'Ancien', to_user_id: 1, whisper: { text: 'salut' } }, '2026-11-23T10:00:00Z'),
+  { id: 'w1', fromId: '2', fromLogin: 'ancien', fromName: 'Ancien', toId: '1', text: 'salut', sentAt: '2026-11-23T10:00:00Z' });
+assert.ok(hasWhisperScopes(SCOPES.split(' ')), 'droit des chuchotements demandé à la connexion');
+
 console.log('✅ Actions de modération OK');

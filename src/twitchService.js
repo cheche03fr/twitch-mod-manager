@@ -356,6 +356,20 @@ class TwitchService {
     }));
   }
 
+  /**
+   * Chuchotement (le compte doit avoir un numéro de téléphone vérifié ; 40 destinataires différents par jour).
+   * 204 même si Twitch le supprime en silence pour non-respect de ses règles.
+   */
+  static async sendWhisper(token, fromUserId, toUserId, message) {
+    await helix(token, '/whispers', {
+      method: 'POST',
+      query: { from_user_id: fromUserId, to_user_id: toUserId },
+      body: { message },
+      label: 'Erreur chuchotement'
+    });
+    return true;
+  }
+
   /** status : LOCKED / RESOLVED (avec winningOutcomeId) / CANCELED. */
   static async updatePrediction(token, broadcasterId, predictionId, status, winningOutcomeId = null) {
     const body = { broadcaster_id: broadcasterId, id: predictionId, status };

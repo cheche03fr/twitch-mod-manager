@@ -221,6 +221,7 @@
             <label class="dropdown-item" data-right="editor"><input type="checkbox" data-widget="widget-stream-editor" checked> ✏️ Édition du Stream</label>
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-activity" checked> 📊 Détails & Uptime</label>
             <label class="dropdown-item" data-right="predictions"><input type="checkbox" data-widget="widget-predictions" checked> 🔮 Prédictions</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-whispers" checked> 💬 Chuchotements</label>
           </div>
         </div>
 
@@ -400,6 +401,51 @@
             <div id="predictions-history" class="pred-history">
               <div class="form-label pred-section-label">Historique</div>
               <ul id="predictions-history-list" class="pred-history-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIDGET : CHUCHOTEMENTS (historique par l'API interne de Twitch, envoi et réception en direct) -->
+        <div class="grid-widget col-span-4" id="widget-whispers" data-widget-id="widget-whispers">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">💬</span>
+              <h3>Chuchotements</h3>
+              <span id="whispers-unread" class="whispers-unread hidden" title="Messages non lus"></span>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-whispers-refresh" class="btn-icon btn-sm" title="Actualiser les conversations">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" aria-hidden="true">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+              </button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body whispers-body">
+            <p id="whispers-notice" class="card-hint hidden"></p>
+            <div id="whispers-list-view" class="whispers-view">
+              <form id="whispers-new" class="whispers-form">
+                <input type="text" id="whispers-new-target" class="input-sm" placeholder="Pseudo à qui chuchoter…" autocomplete="off" aria-label="Pseudo à qui chuchoter">
+                <button type="submit" class="btn-pred-new">Écrire</button>
+              </form>
+              <ul id="whispers-threads" class="whispers-threads"></ul>
+            </div>
+            <div id="whispers-thread-view" class="whispers-view hidden">
+              <div class="whispers-thread-header">
+                <button type="button" id="btn-whispers-back" class="btn-icon btn-sm" title="Retour aux conversations" aria-label="Retour aux conversations">←</button>
+                <img id="whispers-thread-avatar" class="whispers-avatar" alt="">
+                <span id="whispers-thread-name" class="whispers-thread-name"></span>
+              </div>
+              <div id="whispers-messages" class="whispers-messages" aria-live="polite"></div>
+              <form id="whispers-send" class="whispers-form">
+                <input type="text" id="whispers-input" class="input-sm" placeholder="Chuchoter…" maxlength="500" autocomplete="off" aria-label="Message à chuchoter">
+                <button type="submit" class="btn-pred-new">Envoyer</button>
+              </form>
+              <div id="whispers-feedback" class="action-feedback"></div>
             </div>
           </div>
         </div>
@@ -734,5 +780,6 @@
   <script src="editorPanel.js"></script>
   <script src="settingsPanel.js"></script>
   <script src="predictionsPanel.js"></script>
+  <script src="whispersPanel.js"></script>
 </body>
 </html>

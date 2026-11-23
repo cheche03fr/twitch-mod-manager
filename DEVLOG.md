@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 47 commits, 41 versions publiées (23 normales et 18 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 48 commits, 42 versions publiées (23 normales et 19 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -17,8 +17,9 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 8. [Débannir, mises à jour automatiques et finitions](#8-débannir-mises-à-jour-automatiques-et-finitions--v1022--v1023-beta6)
 9. [La grande factorisation](#9-la-grande-factorisation--v1023-beta7)
 10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
-11. [Leçons techniques](#11-leçons-techniques)
-12. [Et après ?](#12-et-après-)
+11. [Les chuchotements](#11-les-chuchotements--v1024-beta1)
+12. [Leçons techniques](#12-leçons-techniques)
+13. [Et après ?](#13-et-après-)
 
 ---
 
@@ -131,7 +132,18 @@ Les sept bêtas 1.0.23 sont réunies dans une **version normale**, proposée à 
 
 À noter : le nouvel écran au clic sur l'icône de mise à jour ne se verra qu'à la **prochaine** mise à jour, car c'est la version installée qui l'affiche.
 
-## 11. Leçons techniques
+## 11. Les chuchotements — v1.0.24-beta.1
+*23 novembre 2026*
+
+Un nouveau panneau **💬 Chuchotements** dans la grille, déplaçable comme les autres.
+
+- **Ce que dit l'API officielle** : elle permet d'**envoyer** un chuchotement (`POST /whispers`) et de **recevoir en direct** ceux qui arrivent (EventSub `user.whisper.message`), mais **pas de relire l'historique**. Elle impose aussi un numéro de téléphone vérifié, 40 destinataires différents par jour et 500 caractères pour un premier message.
+- **L'historique par l'API interne**, comme pour la modération : les requêtes `Whispers_Whispers_UserWhisperThreads` (liste des conversations) et `Whispers_Thread_WhisperThread` (une conversation) ont été relevées pendant que l'utilisateur ouvrait ses chuchotements dans la Vue Twitch officielle, puis rejouées en lecture seule pour connaître leur forme, contenu masqué. L'identifiant d'une conversation est formé des deux identifiants de compte, du plus petit au plus grand.
+- **Le panneau** : liste des conversations (la plus récente en premier, aperçu « Toi : … », date relative, pastille de non-lus), conversation en bulles (les siennes en violet à droite), champ d'envoi, et champ « Pseudo à qui chuchoter » pour en démarrer une. Un chuchotement reçu remonte sa conversation en tête, ou s'ajoute directement si elle est ouverte.
+- **Côté technique** : le client EventSub devient générique. Il gère une table d'abonnements (`channel.moderate` par chaîne, `user.whisper.message` pour le compte) au lieu d'une simple liste de chaînes. Les erreurs d'envoi (téléphone non vérifié, destinataire qui refuse, limite atteinte) deviennent des messages clairs.
+- **À faire une fois** : se **déconnecter puis se reconnecter**, pour accorder le nouveau droit `user:manage:whispers`. Sans lui, l'historique s'affiche, mais l'envoi et le direct sont indisponibles.
+
+## 12. Leçons techniques
 
 - **Le site de Twitch peut plus que son API officielle.** Pour un éditeur ou un modérateur, la seule voie est l'API GraphQL interne. Les requêtes sont des « requêtes persistées » identifiées par une empreinte, qui peut changer sans prévenir. Chaque empreinte est notée dans le code (`shortcut:`) avec la marche à suivre pour la relever.
 - **Capturer plutôt que deviner.** Toutes les requêtes internes ont été relevées en observant le trafic de la Vue Twitch officielle pendant une vraie action faite par l'utilisateur, en lisant seulement le contenu et jamais le jeton.
@@ -140,7 +152,7 @@ Les sept bêtas 1.0.23 sont réunies dans une **version normale**, proposée à 
 - **Un compte à rebours figé est un bug** : un temps restant calculé une seule fois laissait croire qu'une prédiction était encore ouverte alors que Twitch l'avait déjà verrouillée.
 - **Tester sans rien casser en vrai** : aucune action visible n'a été lancée sur les chaînes pendant les tests automatiques (pas de ban, de prédiction ni de pub). Les vraies actions ont été faites par l'utilisateur, et les états d'interface simulés localement.
 
-## 12. Et après ?
+## 13. Et après ?
 
 - Garder un œil sur les **empreintes des requêtes internes** de Twitch : si une fonction « chez les autres » cesse de marcher, il faudra relever la nouvelle empreinte.
 - Les **6 failles moyennes** restantes de `npm audit` concernent uniquement les outils de compilation (electron-builder), pas l'application installée.

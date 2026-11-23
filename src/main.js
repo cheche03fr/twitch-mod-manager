@@ -33,6 +33,7 @@ function sendToAllPages(channel, data) {
 
 const modActionsClient = new EventSubClient({
   onAction: (data) => sendToAllPages('twitch:mod-action', data),
+  onWhisper: (data) => sendToAllPages('twitch:whisper', data),
   onError: (broadcasterId, message) => {
     console.error(`EventSub ${broadcasterId} :`, message);
     sendToAllPages('twitch:mod-actions-error', { broadcasterId, message });

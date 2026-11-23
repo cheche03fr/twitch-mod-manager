@@ -661,48 +661,56 @@
     <form method="dialog">
       <h2 id="settings-title">Paramètres</h2>
 
+      <!-- Chaque option est un bouton comme les durées de sanction : violet quand elle est active -->
       <div class="settings-row">
-        <label class="refresh-toggle">
+        <span class="settings-label">Connexion</span>
+        <label class="setting-btn">
           <input type="checkbox" id="setting-auto-login">
           <span>Connexion automatique au démarrage</span>
         </label>
-        <p class="settings-hint">Ouvre directement vos chaînes, sans passer par la page de connexion. Décoché : la page de connexion s'affiche, et « Se connecter avec Twitch » réutilise la session enregistrée.</p>
+        <p class="settings-hint">Active : vos chaînes s'ouvrent directement. Inactive : la page de connexion s'affiche, et « Se connecter avec Twitch » réutilise la session enregistrée.</p>
       </div>
 
       <div class="settings-row">
-        <label class="refresh-toggle">
+        <span class="settings-label">Actualisation des chaînes</span>
+        <label class="setting-btn">
           <input type="checkbox" id="setting-refresh-enabled">
-          <span>Actualisation automatique des chaînes</span>
+          <span>Actualisation automatique</span>
         </label>
-        <div class="refresh-slider">
-          <input type="range" id="setting-refresh" min="30" max="120" step="15" aria-label="Intervalle d'actualisation en secondes">
-          <output id="setting-refresh-value" for="setting-refresh">30 s</output>
+        <div class="settings-grid settings-grid-7" role="radiogroup" aria-label="Intervalle d'actualisation">
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="30"><span>30 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="45"><span>45 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="60"><span>60 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="75"><span>75 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="90"><span>90 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="105"><span>105 s</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-refresh" value="120"><span>120 s</span></label>
         </div>
       </div>
 
-      <fieldset class="settings-row">
-        <legend>Thème</legend>
-        <div class="theme-choices">
-          <label><input type="radio" name="setting-theme" value="dark"> 🌙 Sombre</label>
-          <label><input type="radio" name="setting-theme" value="light"> ☀️ Clair</label>
+      <div class="settings-row">
+        <span class="settings-label">Thème</span>
+        <div class="settings-grid" role="radiogroup" aria-label="Thème">
+          <label class="setting-btn"><input type="radio" name="setting-theme" value="dark"><span>🌙 Sombre</span></label>
+          <label class="setting-btn"><input type="radio" name="setting-theme" value="light"><span>☀️ Clair</span></label>
         </div>
-      </fieldset>
+      </div>
 
       <div class="settings-row">
-        <label class="refresh-toggle">
-          <input type="checkbox" id="setting-beta-updates">
-          <span>Recevoir les versions bêta</span>
-        </label>
-        <p class="settings-hint">Nouveautés en avant-première, parfois moins stables. Décocher ne revient pas en arrière : vous repasserez sur la prochaine version normale.</p>
-        <label class="refresh-toggle">
-          <input type="checkbox" id="setting-auto-updates">
-          <span>Mises à jour automatiques</span>
-        </label>
-        <p class="settings-hint">Téléchargement sans question, puis une icône de mise à jour à côté de ⚙️. Si vous ne l'utilisez pas, la mise à jour s'installe au prochain démarrage.</p>
-        <div class="update-check-row">
-          <button type="button" id="btn-check-updates" class="btn-secondary btn-sm">🔄 Rechercher une mise à jour</button>
-          <span id="update-check-status" class="settings-hint" role="status"></span>
+        <span class="settings-label">Mises à jour</span>
+        <div class="settings-grid">
+          <label class="setting-btn">
+            <input type="checkbox" id="setting-beta-updates">
+            <span>Versions bêta</span>
+          </label>
+          <label class="setting-btn">
+            <input type="checkbox" id="setting-auto-updates">
+            <span>Mises à jour automatiques</span>
+          </label>
         </div>
+        <p class="settings-hint"><strong>Bêta</strong> : nouveautés en avant-première, parfois moins stables ; désactiver ne revient pas en arrière. <strong>Automatiques</strong> : téléchargement sans question, puis une icône de mise à jour à côté de ⚙️ ; sinon installation au prochain démarrage.</p>
+        <button type="button" id="btn-check-updates" class="setting-btn setting-btn-action">🔄 Rechercher une mise à jour</button>
+        <span id="update-check-status" class="settings-hint" role="status"></span>
       </div>
 
       <div class="settings-actions">

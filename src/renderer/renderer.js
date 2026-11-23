@@ -62,9 +62,8 @@ const dom = {
   lastUpdateText: document.getElementById('last-update-text'),
   btnSettings: document.getElementById('btn-settings'),
   settingsDialog: document.getElementById('settings-dialog'),
-  settingRefresh: document.getElementById('setting-refresh'),
+  settingRefreshChoices: document.querySelectorAll('input[name="setting-refresh"]'),
   settingRefreshEnabled: document.getElementById('setting-refresh-enabled'),
-  settingRefreshValue: document.getElementById('setting-refresh-value'),
   loadingSpinner: document.getElementById('loading-spinner'),
   channelsGrid: document.getElementById('channels-grid'),
   emptyState: document.getElementById('empty-state'),
@@ -1933,9 +1932,10 @@ function setupSettings() {
 
   const showRefreshControls = () => {
     dom.settingRefreshEnabled.checked = state.settings.autoRefresh;
-    dom.settingRefresh.value = String(state.settings.refreshSeconds);
-    dom.settingRefresh.disabled = !state.settings.autoRefresh;
-    dom.settingRefreshValue.textContent = `${state.settings.refreshSeconds} s`;
+    dom.settingRefreshChoices.forEach(radio => {
+      radio.checked = Number(radio.value) === state.settings.refreshSeconds;
+      radio.disabled = !state.settings.autoRefresh;
+    });
   };
   const applyRefresh = (changes) => {
     updateSettings(changes);
@@ -1951,11 +1951,9 @@ function setupSettings() {
   });
 
   dom.settingRefreshEnabled.addEventListener('change', (e) => applyRefresh({ autoRefresh: e.target.checked }));
-  // Pendant le glissement : affichage seulement ; au relâchement : enregistrement
-  dom.settingRefresh.addEventListener('input', (e) => {
-    dom.settingRefreshValue.textContent = `${e.target.value} s`;
+  dom.settingRefreshChoices.forEach(radio => {
+    radio.addEventListener('change', (e) => applyRefresh({ refreshSeconds: Number(e.target.value) }));
   });
-  dom.settingRefresh.addEventListener('change', (e) => applyRefresh({ refreshSeconds: Number(e.target.value) }));
 
   dom.settingsDialog.querySelectorAll('input[name="setting-theme"]').forEach(radio => {
     radio.addEventListener('change', (e) => {

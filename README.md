@@ -9,20 +9,20 @@ Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, 
 1. Téléchargez **`Twitch-Mod-Manager-Setup-x.y.z.exe`** depuis la [dernière version](https://github.com/cheche03fr/twitch-mod-manager/releases/latest).
 2. Lancez l'installeur et choisissez le dossier d'installation.
    *Si Windows SmartScreen affiche « Windows a protégé votre ordinateur », cliquez sur **Informations complémentaires** puis **Exécuter quand même** : l'installeur est signé par `cheche03fr` avec un certificat personnel, non reconnu par défaut.*
-3. Ouvrez l'application, cliquez sur **Se connecter avec Twitch** et autorisez l'accès dans votre navigateur. Aux démarrages suivants, ce bouton réutilise la session enregistrée, sans repasser par le navigateur ; cochez **Connexion automatique au démarrage** dans les ⚙️ Paramètres pour ouvrir directement vos chaînes.
+3. Ouvrez l'application, cliquez sur **Se connecter avec Twitch** et autorisez l'accès dans votre navigateur. Aux démarrages suivants, ce bouton réutilise la session enregistrée, sans repasser par le navigateur ; activez **Connexion automatique au démarrage** dans les ⚙️ Paramètres pour ouvrir directement vos chaînes.
 
 ### Mises à jour automatiques
 
 Au démarrage, l'application vérifie s'il existe une nouvelle version et la télécharge en arrière-plan. Une fenêtre vous propose alors **Installer maintenant** ou **Plus tard** : rien n'est installé sans votre accord.
 
-Avec la case **Mises à jour automatiques** cochée dans les ⚙️ Paramètres :
+Avec **Mises à jour automatiques** activé dans les ⚙️ Paramètres :
 - la mise à jour se télécharge sans question, puis une **icône de mise à jour** violette (flèches en cercle autour d'une flèche de téléchargement, avec une pastille verte) apparaît à côté de ⚙️ : un clic l'installe et relance l'application ; son infobulle indique la version ;
 - si vous ne l'utilisez pas, elle s'installe au **prochain démarrage**, derrière un écran « Mise à jour en cours », puis l'application s'ouvre d'elle-même dans la nouvelle version.
 
 La version installée et sa date sont affichées dans le pied de page, toujours visible en bas de la fenêtre.
 
 ### Versions bêta
-Par défaut, vous ne recevez que les versions normales. Pour tester les nouveautés en avant-première, cochez **Recevoir les versions bêta** dans les ⚙️ Paramètres : les versions bêta (par exemple `1.0.15-beta.1`) vous seront alors proposées. Décocher la case ne revient pas en arrière : vous repasserez sur la prochaine version normale.
+Par défaut, vous ne recevez que les versions normales. Pour tester les nouveautés en avant-première, activez **Versions bêta** dans les ⚙️ Paramètres : les versions bêta (par exemple `1.0.15-beta.1`) vous seront alors proposées. Désactiver l'option ne revient pas en arrière : vous repasserez sur la prochaine version normale.
 
 Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherche tout de suite (sur la voie bêta si la case est cochée) et indique si vous avez déjà la dernière version.
 
@@ -82,12 +82,11 @@ Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a 
 - Le panneau reprend le style du reste de l'application : choix en **bleu** et **rose** comme sur Twitch, barres de points et de votants, état en pastille (votes ouverts, verrouillée, résolue, annulée), et un formulaire « ＋ Nouvelle » pour la question, les choix et la durée du vote.
 
 ### ⚙️ Paramètres
-Bouton **⚙️** en haut à droite :
-- **Actualisation automatique des chaînes** : une case à cocher pour l'activer ou la désactiver, et un curseur pour choisir l'intervalle, de **30 à 120 secondes** par pas de 15 (30 s par défaut).
-- **Connexion automatique au démarrage** (décochée par défaut) : cochée, l'application ouvre directement vos chaînes sans afficher la page de connexion ; décochée, la page de connexion s'affiche à chaque démarrage.
+Bouton **⚙️** en haut à droite. Chaque option est un bouton, dans le même style que les durées de sanction : **violet** quand elle est activée, gris sinon.
+- **Connexion automatique au démarrage** (désactivée par défaut) : activée, l'application ouvre directement vos chaînes sans afficher la page de connexion ; désactivée, la page de connexion s'affiche à chaque démarrage.
+- **Actualisation automatique** des chaînes, et son intervalle à choisir parmi **30, 45, 60, 75, 90, 105 ou 120 secondes** (30 s par défaut).
 - **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
-
-- **Recevoir les versions bêta** : voir [Versions bêta](#versions-bêta).
+- **Versions bêta** : voir [Versions bêta](#versions-bêta). **Mises à jour automatiques** : voir [Mises à jour automatiques](#mises-à-jour-automatiques). Le bouton **🔄 Rechercher une mise à jour** lance la recherche tout de suite.
 
 Les choix sont enregistrés et retrouvés au prochain démarrage.
 

@@ -92,6 +92,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
 - La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`, **chiffrée par Windows** et liée à votre compte Windows (une session déjà enregistrée en clair est chiffrée au prochain démarrage). Le bouton **Déconnexion** la supprime.
+- Moteur **Electron 45** à jour des correctifs de sécurité de Chromium.
 - Les sites intégrés (twitch.tv) ne reçoivent **aucune permission** (caméra, micro, notifications…), sauf le plein écran et la copie dans le presse-papiers.
 - La **Vue Twitch officielle** reste sur twitch.tv : un lien vers un autre site s'ouvre dans votre navigateur.
 - La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
@@ -107,6 +108,8 @@ npm install
 npm start        # ou double-clic sur Lancer.bat
 npm test
 ```
+
+L'application tourne sur **Electron 45** (Chromium 156). Depuis Electron 42, le programme Electron est téléchargé au premier lancement de `npm start`, et non plus pendant `npm install`.
 
 Publier une version : `git tag v1.2.3; git push origin v1.2.3`. GitHub Actions compile, signe l'installeur et crée la release ; les applications installées se mettent à jour automatiquement.
 

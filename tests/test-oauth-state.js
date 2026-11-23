@@ -25,17 +25,18 @@ const localServer = require('../src/localServer');
 
   // Fichier de session : jeton chiffré, ancien fichier en clair relu puis à réécrire chiffré
   const { sealSession, openSession } = require('../src/sessionSeal');
-  const fakeStorage = (available) => ({
-    isEncryptionAvailable: () => available,
-    encryptString: (s) => Buffer.from([...s].reverse().join(''), 'utf8'),
-    decryptString: (b) => [...b.toString('utf8')].reverse().join('')
+  const fakeStorage = (available, shouldReEncrypt = false) => ({
+    isAsyncEncryptionAvailable: async () => available,
+    encryptStringAsync: async (s) => Buffer.from([...s].reverse().join(''), 'utf8'),
+    decryptStringAsync: async (b) => ({ result: [...b.toString('utf8')].reverse().join(''), shouldReEncrypt })
   });
   const session = { token: 'secret-jeton', userId: '42', login: 'cheche03fr' };
-  const sealed = sealSession(session, fakeStorage(true));
+  const sealed = await sealSession(session, fakeStorage(true));
   assert.ok(!sealed.includes('secret-jeton'), 'le jeton n\'apparaît pas en clair');
-  assert.deepStrictEqual(openSession(sealed, fakeStorage(true)), { data: session, needsReseal: false });
-  assert.deepStrictEqual(openSession(JSON.stringify(session), fakeStorage(true)), { data: session, needsReseal: true }, 'ancien fichier en clair');
-  assert.deepStrictEqual(openSession(sealSession(session, fakeStorage(false)), fakeStorage(false)), { data: session, needsReseal: false }, 'sans chiffrement disponible');
+  assert.deepStrictEqual(await openSession(sealed, fakeStorage(true)), { data: session, needsReseal: false });
+  assert.deepStrictEqual(await openSession(sealed, fakeStorage(true, true)), { data: session, needsReseal: true }, 'clé à renouveler');
+  assert.deepStrictEqual(await openSession(JSON.stringify(session), fakeStorage(true)), { data: session, needsReseal: true }, 'ancien fichier en clair');
+  assert.deepStrictEqual(await openSession(await sealSession(session, fakeStorage(false)), fakeStorage(false)), { data: session, needsReseal: false }, 'sans chiffrement disponible');
   console.log('✅ Chiffrement de la session OK');
 })().catch(err => {
   console.error('❌ Échec du test state OAuth :', err);

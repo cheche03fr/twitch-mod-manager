@@ -207,6 +207,7 @@ if (!singleInstanceLock) {
   app.whenReady().then(async () => {
     restrictPermissions(session.defaultSession);
     restrictPermissions(session.fromPartition('persist:twitch_mod'));
+    await AuthManager.loadSession(); // avant la page : elle vérifie la session dès son chargement
     setupIpcHandlers();
     await createWindow();
     // La recherche de mise à jour est lancée par la page (app:check-updates), qui connaît le choix bêta
@@ -311,7 +312,7 @@ function setupIpcHandlers() {
       const validation = await TwitchService.validateToken(token);
       const user = await TwitchService.getUserInfo(token, validation.user_id);
 
-      AuthManager.saveSession({
+      await AuthManager.saveSession({
         token,
         userId: validation.user_id,
         login: validation.login

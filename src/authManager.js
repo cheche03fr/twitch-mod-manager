@@ -12,28 +12,37 @@ const DATA_DIR = app.isPackaged
   : path.join(__dirname, '..', 'data');
 const SESSION_FILE = path.join(DATA_DIR, 'session.json');
 
-class AuthManager {
-  static saveSession(data) {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(SESSION_FILE, sealSession(data, safeStorage), 'utf-8');
-  }
+// Session déchiffrée une fois au démarrage (loadSession), puis gardée en mémoire : le déchiffrement est asynchrone
+let currentSession = null;
 
-  static getSession() {
+class AuthManager {
+  static async loadSession() {
+    currentSession = null;
     try {
       if (fs.existsSync(SESSION_FILE)) {
-        const { data, needsReseal } = openSession(fs.readFileSync(SESSION_FILE, 'utf-8'), safeStorage);
-        if (needsReseal) AuthManager.saveSession(data);
-        return data;
+        const { data, needsReseal } = await openSession(fs.readFileSync(SESSION_FILE, 'utf-8'), safeStorage);
+        currentSession = data;
+        if (needsReseal) await AuthManager.saveSession(data);
       }
     } catch (err) {
       console.error('Erreur lecture session:', err.message);
     }
-    return null;
+  }
+
+  static async saveSession(data) {
+    currentSession = data;
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(SESSION_FILE, await sealSession(data, safeStorage), 'utf-8');
+  }
+
+  static getSession() {
+    return currentSession;
   }
 
   static logout() {
+    currentSession = null;
     try {
       if (fs.existsSync(SESSION_FILE)) {
         fs.unlinkSync(SESSION_FILE);

@@ -76,6 +76,7 @@ async function openModerationScreen(channel) {
   // Chargement widgets additionnels
   loadPredictions(channel.id);
   loadWhispersPanel();
+  loadChannelPointsPanel(channel.id);
   setTimeout(setupPredictionsWidget, 300);
 }
 
@@ -89,6 +90,7 @@ function closeModerationScreen() {
   state.isEditor = false;
   applyAdCooldown(null);
   stopUptimeCounter();
+  stopChannelPointsPanel();
 
   dom.twitchStreamIframe.src = '';
   dom.twitchChatIframe.src = '';

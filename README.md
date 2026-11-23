@@ -66,6 +66,10 @@ Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête
   - *Il faut s'être connecté une fois à Twitch dans l'onglet **Vue Twitch officielle** : l'historique utilise cette session. Il passe par une API interne de Twitch, non officielle, qui peut cesser de fonctionner si Twitch la modifie ; l'application garde alors les actions reçues en direct.*
 - Panneau **💬 Chuchotements** : tes conversations Twitch (les plus récentes en premier, avec les messages non lus), la lecture d'une conversation, l'envoi d'un chuchotement, et les chuchotements reçus qui arrivent **en direct**. Le champ « Pseudo à qui chuchoter » démarre une nouvelle conversation ; un clic sur un pseudo du panneau **Communauté** le remplit, comme il remplit la cible des Actions Rapides.
   - L'historique passe par la session de la **Vue Twitch officielle** (API interne de Twitch, non officielle) ; seuls les 20 derniers messages d'une conversation sont affichés.
+- Panneau **🎁 Points de chaîne**, sur ta chaîne comme sur celles que tu modères :
+  - la **file des demandes** de récompenses (récompense, spectateur, message éventuel), avec **✓ Valider** ou **↩ Refuser**, qui rend les points au spectateur ; une pastille indique le nombre de demandes en attente ;
+  - l'**historique en direct** : chaque nouvelle demande et chaque demande traitée depuis l'app s'y ajoutent. La file est relue toutes les 15 secondes.
+  - *Utilise la session de la **Vue Twitch officielle** (API interne de Twitch, non officielle). Les récompenses validées automatiquement par Twitch (sans passer par la file) n'apparaissent pas, et seules les 50 plus anciennes demandes sont affichées.*
   - L'envoi et la réception en direct passent par l'API officielle : il faut s'être **reconnecté** une fois après la mise à jour, et Twitch exige un **numéro de téléphone vérifié** sur ton compte. Limites de Twitch : 40 destinataires différents par jour, 100 messages par minute, 500 caractères pour un premier message.
 - Onglet **Vue Twitch officielle** : la Mod View de Twitch directement dans l'application.
 
@@ -102,7 +106,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 - Moteur **Electron 45** à jour des correctifs de sécurité de Chromium.
 - Les sites intégrés (twitch.tv) ne reçoivent **aucune permission** (caméra, micro, notifications…), sauf le plein écran et la copie dans le presse-papiers.
 - La **Vue Twitch officielle** reste sur twitch.tv : un lien vers un autre site s'ouvre dans votre navigateur.
-- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
+- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer, ainsi que la file des points de chaîne ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur), et envoi et réception des chuchotements.
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 - Le petit serveur interne (connexion Twitch et pages de l'app) n'écoute que sur votre PC (`127.0.0.1`) et ne sert que les fichiers de l'application.
@@ -121,8 +125,8 @@ npm test
 L'historique complet du développement, version par version, est dans le [📓 Devlog](DEVLOG.md).
 
 Organisation du code :
-- **Processus principal** : `main.js` (fenêtre, onglets, connexion, mises à jour), `ipcTwitch.js` (tous les échanges `twitch:*` avec la page, avec vérification commune de la session et des identifiants), `twitchService.js` (API officielle Helix, via une fonction commune `helix()`), `twitchModLog.js` / `twitchChannelEdit.js` / `twitchPredictions.js` / `twitchWhispers.js` (API interne de Twitch, via `runTwitchGql()`), `updater.js`, `authManager.js` + `sessionSeal.js`.
-- **Page** (`src/renderer/`) : `renderer.js` (état, éléments, démarrage, utilitaires comme `setFeedback`), puis un fichier par partie : `channelList.js`, `channelTabs.js`, `gridCustomization.js`, `moderationPanel.js`, `editorPanel.js`, `settingsPanel.js`, `predictionsPanel.js`, `whispersPanel.js`.
+- **Processus principal** : `main.js` (fenêtre, onglets, connexion, mises à jour), `ipcTwitch.js` (tous les échanges `twitch:*` avec la page, avec vérification commune de la session et des identifiants), `twitchService.js` (API officielle Helix, via une fonction commune `helix()`), `twitchModLog.js` / `twitchChannelEdit.js` / `twitchPredictions.js` / `twitchWhispers.js` / `twitchChannelPoints.js` (API interne de Twitch, via `runTwitchGql()`), `updater.js`, `authManager.js` + `sessionSeal.js`.
+- **Page** (`src/renderer/`) : `renderer.js` (état, éléments, démarrage, utilitaires comme `setFeedback`), puis un fichier par partie : `channelList.js`, `channelTabs.js`, `gridCustomization.js`, `moderationPanel.js`, `editorPanel.js`, `settingsPanel.js`, `predictionsPanel.js`, `whispersPanel.js`, `channelPointsPanel.js`.
 
 L'application tourne sur **Electron 45** (Chromium 156). Depuis Electron 42, le programme Electron est téléchargé au premier lancement de `npm start`, et non plus pendant `npm install`.
 

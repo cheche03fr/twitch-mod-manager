@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 52 commits, 44 versions publiées (24 normales et 20 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 53 commits, 45 versions publiées (24 normales et 21 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -19,8 +19,9 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
 11. [Les chuchotements](#11-les-chuchotements--v1024-beta1--beta2)
 12. [Deuxième contrôle de sécurité](#12-deuxième-contrôle-de-sécurité--v1024-beta3)
-13. [Leçons techniques](#13-leçons-techniques)
-14. [Et après ?](#14-et-après-)
+13. [Les points de chaîne](#13-les-points-de-chaîne--v1024-beta4)
+14. [Leçons techniques](#14-leçons-techniques)
+15. [Et après ?](#15-et-après-)
 
 ---
 
@@ -161,7 +162,24 @@ Un nouveau contrôle complet, après l'arrivée des chuchotements. **Aucune fail
 
 Aucun changement visible dans l'application.
 
-## 13. Leçons techniques
+## 13. Les points de chaîne — v1.0.24-beta.4
+*23 novembre 2026*
+
+Un nouveau panneau **🎁 Points de chaîne** dans la grille, sur sa propre chaîne comme sur celles que l'on modère.
+
+- **Ce que dit l'API officielle** : elle réserve les demandes de récompenses au streamer, et seulement pour les récompenses créées par l'application elle-même. Elle ne sert donc à rien ici.
+- **Comme le site de Twitch** : les requêtes ont été relevées pendant que l'utilisateur validait de vraies demandes dans la file des récompenses de la Vue Twitch officielle :
+  - `RedemptionsByRewardID_Paginated` lit la file ;
+  - `BulkUpdateRedemptions` valide (`FULFILLED`) ou refuse en rendant les points (`CANCELED`).
+
+  Les pseudos des spectateurs sont ensuite retrouvés par l'API officielle.
+- **Le panneau** :
+  - la **file des demandes** : récompense, spectateur, ancienneté, message éventuel, avec **✓ Valider** et **↩ Refuser**, et une pastille du nombre en attente ;
+  - l'**historique en direct** des nouvelles demandes et de celles traitées depuis l'app.
+- **Le « direct »** est une relecture de la file toutes les 15 secondes, arrêtée à la fermeture de la chaîne. Les récompenses validées automatiquement par Twitch ne passent pas par la file et n'y apparaissent donc pas.
+- **Pour le capturer**, un nouveau script d'écoute du trafic de la Vue Twitch officielle ne note que le nom des requêtes, leur empreinte et la forme des réponses, textes tronqués, jamais le jeton.
+
+## 14. Leçons techniques
 
 - **Le site de Twitch peut plus que son API officielle.** Pour un éditeur ou un modérateur, la seule voie est l'API GraphQL interne. Les requêtes sont des « requêtes persistées » identifiées par une empreinte, qui peut changer sans prévenir. Chaque empreinte est notée dans le code (`shortcut:`) avec la marche à suivre pour la relever.
 - **Capturer plutôt que deviner.** Toutes les requêtes internes ont été relevées en observant le trafic de la Vue Twitch officielle pendant une vraie action faite par l'utilisateur, en lisant seulement le contenu et jamais le jeton.
@@ -170,7 +188,7 @@ Aucun changement visible dans l'application.
 - **Un compte à rebours figé est un bug** : un temps restant calculé une seule fois laissait croire qu'une prédiction était encore ouverte alors que Twitch l'avait déjà verrouillée.
 - **Tester sans rien casser en vrai** : aucune action visible n'a été lancée sur les chaînes pendant les tests automatiques (pas de ban, de prédiction ni de pub). Les vraies actions ont été faites par l'utilisateur, et les états d'interface simulés localement.
 
-## 14. Et après ?
+## 15. Et après ?
 
 - Garder un œil sur les **empreintes des requêtes internes** de Twitch : si une fonction « chez les autres » cesse de marcher, il faudra relever la nouvelle empreinte.
 - Les **6 failles moyennes** restantes de `npm audit` concernent uniquement les outils de compilation (electron-builder), pas l'application installée.

@@ -8,6 +8,7 @@ const { whisperThreadId, fetchWhisperThreads, fetchWhisperThread } = require('./
 const { fetchTwitchModLog } = require('./twitchModLog');
 const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
 const { getPredictionsViaWeb, createPredictionViaWeb, updatePredictionViaWeb } = require('./twitchPredictions');
+const { fetchRedemptionQueue, updateRedemptionsViaWeb } = require('./twitchChannelPoints');
 
 const isChannelId = (id) => /^\d+$/.test(String(id));
 const isOtherChannel = (sessionData, broadcasterId) => String(broadcasterId) !== String(sessionData.userId);
@@ -243,12 +244,37 @@ function registerWhisperHandlers(modActionsClient) {
   }, { channelArg: false });
 }
 
+// Points de chaîne : file des demandes (API interne, sur toutes les chaînes) ; pseudos des spectateurs par Helix
+function registerChannelPointsHandlers() {
+  const action = 'gérer les points de chaîne';
+
+  handleTwitch('twitch:get-redemptions', async ({ token }, broadcasterId) => {
+    const channel = await TwitchService.getUserInfo(token, broadcasterId);
+    if (!channel?.login) return { success: false, error: 'Chaîne introuvable' };
+    const res = webResult(await fetchRedemptionQueue(session, channel.login), action);
+    if (!res.success) return { success: false, error: res.error };
+    const ids = [...new Set(res.redemptions.map(r => r.userId).filter(Boolean))];
+    const users = ids.length ? await TwitchService.fetchMap(token, '/users', { id: ids }, 'id', 'Pseudos des spectateurs') : new Map();
+    const redemptions = res.redemptions.map(r => {
+      const user = users.get(r.userId);
+      return { ...r, userLogin: user?.login || '', userName: user?.display_name || user?.login || `#${r.userId}` };
+    });
+    return { success: true, redemptions, hasMore: res.hasMore };
+  });
+
+  handleTwitch('twitch:update-redemptions', async (_s, broadcasterId, redemptionIds, status) => {
+    const res = webResult(await updateRedemptionsViaWeb(session, broadcasterId, redemptionIds, status), action);
+    return res.success ? { success: true } : { success: false, error: res.error };
+  });
+}
+
 function registerTwitchIpc({ modActionsClient }) {
   registerChannelHandlers(modActionsClient);
   registerModerationHandlers();
   registerEditorHandlers();
   registerPredictionHandlers();
   registerWhisperHandlers(modActionsClient);
+  registerChannelPointsHandlers();
 }
 
 module.exports = { registerTwitchIpc, isChannelId };

@@ -171,6 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupGridCustomization();
   setupPredictionsWidget();
   setupWhispersPanel();
+  setupChannelPointsPanel();
   setupFooter();
   setupSettings();
   await checkExistingSession();

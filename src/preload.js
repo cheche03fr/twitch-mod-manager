@@ -46,6 +46,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sendWhisper: (targetUser, message) => ipcRenderer.invoke('twitch:send-whisper', targetUser, message),
   onWhisper: (callback) => ipcRenderer.on('twitch:whisper', (_e, data) => callback(data)),
 
+  // Points de chaîne
+  getRedemptions: (broadcasterId) => ipcRenderer.invoke('twitch:get-redemptions', broadcasterId),
+  updateRedemptions: (broadcasterId, redemptionIds, status) => ipcRenderer.invoke('twitch:update-redemptions', broadcasterId, redemptionIds, status),
+
   // Rôle Éditeur de chaîne
   checkEditorRights: (broadcasterId) => ipcRenderer.invoke('twitch:check-editor-rights', broadcasterId),
   getChannelInfo: (broadcasterId) => ipcRenderer.invoke('twitch:get-channel-info', broadcasterId),

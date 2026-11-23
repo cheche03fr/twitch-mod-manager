@@ -151,4 +151,23 @@ assert.deepStrictEqual(whisperFromEvent({ whisper_id: 'w1', from_user_id: 2, fro
   { id: 'w1', fromId: '2', fromLogin: 'ancien', fromName: 'Ancien', toId: '1', text: 'salut', sentAt: '2026-11-23T10:00:00Z' });
 assert.ok(hasWhisperScopes(SCOPES.split(' ')), 'droit des chuchotements demandé à la connexion');
 
+// Points de chaîne : file des demandes (forme relevée sur twitch.tv) et validation / remboursement
+const { parseRedemptionQueue, buildUpdateRedemptionsOperation } = require('../src/twitchChannelPoints');
+const R1 = '58367a3b-7290-4205-9d45-e1683fafa939';
+const queue = parseRedemptionQueue([{ data: { user: { channel: { communityPointsRedemptionQueue: { edges: [
+  { node: { id: R1, reward: { id: 'r1', title: 'Hydratation' }, user: { id: 74015529 }, input: null, timestamp: '2026-11-19T14:16:00Z' } },
+  { node: { id: 'b2', reward: { id: 'r2', title: 'Une question' }, user: { id: '44' }, input: 'Ça va ?', timestamp: '2026-11-19T16:18:48Z' } },
+  { node: null }
+], pageInfo: { hasNextPage: true } } } } } }]);
+assert.deepStrictEqual(queue.redemptions.map(r => [r.id, r.rewardTitle, r.userId, r.input]),
+  [[R1, 'Hydratation', '74015529', null], ['b2', 'Une question', '44', 'Ça va ?']], 'demandes de la file, nœud vide ignoré');
+assert.strictEqual(queue.hasMore, true, 'plus de 50 demandes signalées');
+assert.throws(() => parseRedemptionQueue([{ data: { user: null } }]), /inattendue/);
+assert.deepStrictEqual(buildUpdateRedemptionsOperation(143330248, [R1], 'CANCELED').variables,
+  { input: { channelID: '143330248', newStatus: 'CANCELED', oldStatus: 'UNFULFILLED', redemptionIDs: [R1] } });
+assert.strictEqual(buildUpdateRedemptionsOperation('1', R1, 'FULFILLED').operationName, 'BulkUpdateRedemptions');
+assert.throws(() => buildUpdateRedemptionsOperation('1', [R1], 'UNFULFILLED'), /Action inconnue/, 'seulement valider ou refuser');
+assert.throws(() => buildUpdateRedemptionsOperation('1', ['pas-un-id'], 'FULFILLED'), /Demandes invalides/);
+assert.throws(() => buildUpdateRedemptionsOperation('1', [], 'FULFILLED'), /Demandes invalides/);
+
 console.log('✅ Actions de modération OK');

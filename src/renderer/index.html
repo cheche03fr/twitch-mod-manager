@@ -222,6 +222,7 @@
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-activity" checked> 📊 Détails & Uptime</label>
             <label class="dropdown-item" data-right="predictions"><input type="checkbox" data-widget="widget-predictions" checked> 🔮 Prédictions</label>
             <label class="dropdown-item"><input type="checkbox" data-widget="widget-whispers" checked> 💬 Chuchotements</label>
+            <label class="dropdown-item"><input type="checkbox" data-widget="widget-channel-points" checked> 🎁 Points de chaîne</label>
           </div>
         </div>
 
@@ -447,6 +448,35 @@
               </form>
               <div id="whispers-feedback" class="action-feedback"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- WIDGET : POINTS DE CHAÎNE (file des demandes de récompenses et historique en direct, API interne de Twitch) -->
+        <div class="grid-widget col-span-4" id="widget-channel-points" data-widget-id="widget-channel-points">
+          <div class="widget-header">
+            <div class="widget-title">
+              <span class="drag-handle" title="Glisser pour déplacer ce panneau">⋮⋮</span>
+              <span class="widget-icon">🎁</span>
+              <h3>Points de chaîne</h3>
+              <span id="cp-count" class="whispers-unread hidden" title="Demandes en attente"></span>
+            </div>
+            <div class="widget-actions">
+              <button id="btn-cp-refresh" class="btn-icon btn-sm" title="Actualiser la file des demandes">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" aria-hidden="true">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+              </button>
+              <button class="btn-widget-collapse" title="Réduire">−</button>
+              <button class="btn-widget-close" title="Fermer ce panneau">×</button>
+            </div>
+          </div>
+          <div class="widget-body cp-body">
+            <div class="form-label pred-section-label">Demandes en attente</div>
+            <ul id="cp-queue" class="cp-queue" aria-live="polite"></ul>
+            <div id="cp-feedback" class="action-feedback"></div>
+            <div class="form-label pred-section-label">Historique en direct</div>
+            <ul id="cp-history" class="pred-history-list cp-history"></ul>
           </div>
         </div>
 
@@ -781,5 +811,6 @@
   <script src="settingsPanel.js"></script>
   <script src="predictionsPanel.js"></script>
   <script src="whispersPanel.js"></script>
+  <script src="channelPointsPanel.js"></script>
 </body>
 </html>

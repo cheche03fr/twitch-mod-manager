@@ -90,6 +90,13 @@ function showWhisperList() {
   renderWhisperThreads();
 }
 
+/** Clic sur un pseudo de Communauté : il devient le destinataire proposé (comme la cible des Actions Rapides). */
+function targetWhisperUser(login) {
+  if (!wEl('widget-whispers')) return;
+  if (whispers.open) showWhisperList();
+  wEl('whispers-new-target').value = login;
+}
+
 /** Nouvelle conversation à partir d'un pseudo. */
 async function openWhisperWith(login) {
   if (!login) return;

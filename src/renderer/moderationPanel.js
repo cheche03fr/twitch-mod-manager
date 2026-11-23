@@ -373,7 +373,7 @@ function renderChattersList(chatters) {
   chatters.forEach(chatter => {
     const item = document.createElement('div');
     item.className = 'chatter-item';
-    item.title = `Cliquer pour cibler @${chatter.user_login}`;
+    item.title = `Cliquer pour cibler @${chatter.user_login} (sanction et chuchotement)`;
     item.innerHTML = `
       <span>@${escapeHtml(chatter.user_name || chatter.user_login)}</span>
       <span style="font-size:10px; color:var(--twitch-purple-light);">⚡ Cibler</span>
@@ -383,6 +383,7 @@ function renderChattersList(chatters) {
       dom.banUserInput.value = chatter.user_login;
       dom.banUserInput.focus();
       setFeedback(dom.banFeedback, `Cible : @${chatter.user_login}`);
+      targetWhisperUser(chatter.user_login);
     });
 
     dom.chattersList.appendChild(item);

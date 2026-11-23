@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 48 commits, 42 versions publiées (23 normales et 19 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 49 commits, 43 versions publiées (23 normales et 20 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -17,7 +17,7 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 8. [Débannir, mises à jour automatiques et finitions](#8-débannir-mises-à-jour-automatiques-et-finitions--v1022--v1023-beta6)
 9. [La grande factorisation](#9-la-grande-factorisation--v1023-beta7)
 10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
-11. [Les chuchotements](#11-les-chuchotements--v1024-beta1)
+11. [Les chuchotements](#11-les-chuchotements--v1024-beta1--beta2)
 12. [Leçons techniques](#12-leçons-techniques)
 13. [Et après ?](#13-et-après-)
 
@@ -132,7 +132,7 @@ Les sept bêtas 1.0.23 sont réunies dans une **version normale**, proposée à 
 
 À noter : le nouvel écran au clic sur l'icône de mise à jour ne se verra qu'à la **prochaine** mise à jour, car c'est la version installée qui l'affiche.
 
-## 11. Les chuchotements — v1.0.24-beta.1
+## 11. Les chuchotements — v1.0.24-beta.1 → beta.2
 *23 novembre 2026*
 
 Un nouveau panneau **💬 Chuchotements** dans la grille, déplaçable comme les autres.
@@ -142,6 +142,7 @@ Un nouveau panneau **💬 Chuchotements** dans la grille, déplaçable comme les
 - **Le panneau** : liste des conversations (la plus récente en premier, aperçu « Toi : … », date relative, pastille de non-lus), conversation en bulles (les siennes en violet à droite), champ d'envoi, et champ « Pseudo à qui chuchoter » pour en démarrer une. Un chuchotement reçu remonte sa conversation en tête, ou s'ajoute directement si elle est ouverte.
 - **Côté technique** : le client EventSub devient générique. Il gère une table d'abonnements (`channel.moderate` par chaîne, `user.whisper.message` pour le compte) au lieu d'une simple liste de chaînes. Les erreurs d'envoi (téléphone non vérifié, destinataire qui refuse, limite atteinte) deviennent des messages clairs.
 - **À faire une fois** : se **déconnecter puis se reconnecter**, pour accorder le nouveau droit `user:manage:whispers`. Sans lui, l'historique s'affiche, mais l'envoi et le direct sont indisponibles.
+- **v1.0.24-beta.2 — Communauté → Chuchotements** : un clic sur un pseudo du panneau **Communauté** remplit maintenant aussi « Pseudo à qui chuchoter », comme il remplissait déjà la cible des Actions Rapides. Si une conversation était ouverte, le panneau revient à la liste pour que le champ soit visible.
 
 ## 12. Leçons techniques
 

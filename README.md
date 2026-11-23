@@ -106,7 +106,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur), et envoi et réception des chuchotements.
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 - Le petit serveur interne (connexion Twitch et pages de l'app) n'écoute que sur votre PC (`127.0.0.1`) et ne sert que les fichiers de l'application.
-- **Compilation** : les actions GitHub sont figées par empreinte, la compilation n'a qu'un accès en lecture au dépôt, et seule l'étape finale, qui n'installe aucune dépendance, peut créer la release. Le certificat de signature n'est donné qu'à l'étape de signature.
+- **Compilation** : les actions GitHub, à jour (Node.js 24), sont figées par empreinte, la compilation n'a qu'un accès en lecture au dépôt, et seule l'étape finale, qui n'installe aucune dépendance, peut créer la release. Le certificat de signature n'est donné qu'à l'étape de signature.
 
 ---
 

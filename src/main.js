@@ -7,6 +7,7 @@ const { PORT } = require('./config');
 const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
 const { fetchTwitchModLog } = require('./twitchModLog');
 const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
+const { getPredictionsViaWeb, createPredictionViaWeb, updatePredictionViaWeb } = require('./twitchPredictions');
 
 let mainWindow = null;
 let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
@@ -674,10 +675,23 @@ function setupIpcHandlers() {
 
 
   // Predictions
+  // Prédictions : API officielle sur sa propre chaîne ; sur celle d'un autre (refusée par l'API officielle),
+  // session de la Vue Twitch officielle, comme la Mod View de twitch.tv
+  const isOtherChannel = (sessionData, broadcasterId) => String(broadcasterId) !== String(sessionData.userId);
+  const webPredictionResult = (res) => (res.needsWebLogin
+    ? { success: false, error: 'Connecte-toi une fois à Twitch dans l\'onglet « Vue Twitch officielle » pour gérer les prédictions de cette chaîne.' }
+    : { success: res.success, data: res.data, error: res.error });
+
   ipcMain.handle('twitch:get-predictions', async (event, broadcasterId) => {
     const sessionData = AuthManager.getSession();
     if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
+    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
     try {
+      if (isOtherChannel(sessionData, broadcasterId)) {
+        const user = await TwitchService.getUserInfo(sessionData.token, broadcasterId);
+        if (!user?.login) return { success: false, error: 'Chaîne introuvable' };
+        return webPredictionResult(await getPredictionsViaWeb(session, user.login));
+      }
       const data = await TwitchService.getPredictions(sessionData.token, broadcasterId);
       return { success: true, data };
     } catch (err) {
@@ -688,7 +702,11 @@ function setupIpcHandlers() {
   ipcMain.handle('twitch:create-prediction', async (event, broadcasterId, predData) => {
     const sessionData = AuthManager.getSession();
     if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
+    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
     try {
+      if (isOtherChannel(sessionData, broadcasterId)) {
+        return webPredictionResult(await createPredictionViaWeb(session, broadcasterId, predData || {}));
+      }
       const data = await TwitchService.createPrediction(sessionData.token, broadcasterId, predData);
       return { success: true, data };
     } catch (err) {
@@ -699,7 +717,11 @@ function setupIpcHandlers() {
   ipcMain.handle('twitch:update-prediction', async (event, broadcasterId, predictionId, status, winningOutcomeId) => {
     const sessionData = AuthManager.getSession();
     if (!sessionData || !sessionData.token) return { success: false, error: 'Non authentifie' };
+    if (!/^\d+$/.test(String(broadcasterId))) return { success: false, error: 'Identifiant de chaîne invalide' };
     try {
+      if (isOtherChannel(sessionData, broadcasterId)) {
+        return webPredictionResult(await updatePredictionViaWeb(session, predictionId, status, winningOutcomeId));
+      }
       const data = await TwitchService.updatePrediction(sessionData.token, broadcasterId, predictionId, status, winningOutcomeId);
       return { success: true, data };
     } catch (err) {

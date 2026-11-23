@@ -2008,28 +2008,11 @@ async function loadPredictions(broadcasterId) {
 
   if (activeEl) activeEl.style.display = 'none';
   statusEl.style.display = 'block';
+  clearInterval(_predictionsState.countdown);
 
-  // L'API Twitch n'autorise les predictions que sur la chaine du compte connecte (pas pour les mods/editeurs) :
-  // ailleurs, le panneau renvoie vers la Mod View Twitch, où les modérateurs peuvent les gérer
-  const isOwnChannel = String(broadcasterId) === String(state.currentUser?.id);
+  // Sur la chaîne d'un autre, le processus principal passe par la session de la Vue Twitch officielle
   showRight('predictions', true);
-  ['btn-new-prediction', 'btn-refresh-predictions', 'predictions-history', 'prediction-modal']
-    .forEach(id => document.getElementById(id).classList.toggle('no-right', !isOwnChannel));
-  if (!isOwnChannel) {
-    const info = Object.assign(document.createElement('p'), {
-      className: 'card-hint',
-      textContent: "Twitch réserve la création de prédictions par l'application au streamer. Gère-les depuis la Vue Twitch officielle, comme sur le site Twitch."
-    });
-    const btn = Object.assign(document.createElement('button'), {
-      className: 'btn-primary btn-sm',
-      textContent: '🔮 Gérer les prédictions dans la Vue Twitch officielle'
-    });
-    btn.addEventListener('click', () => switchModTab('webview'));
-    statusEl.replaceChildren(info, btn);
-    return;
-  }
-
-  statusEl.textContent = 'Chargement des predictions...';
+  statusEl.textContent = 'Chargement des prédictions…';
 
   try {
     const res = await window.electronAPI.getPredictions(broadcasterId);
@@ -2040,7 +2023,7 @@ async function loadPredictions(broadcasterId) {
     const history = predictions.filter(p => p.status !== 'ACTIVE' && p.status !== 'LOCKED');
 
     statusEl.style.display = active.length ? 'none' : 'block';
-    statusEl.textContent = active.length ? '' : 'Aucune prediction active.';
+    statusEl.textContent = active.length ? '' : '🔮 Aucune prédiction en cours. Lance-en une avec « ＋ Nouvelle ».';
 
     if (active.length && activeEl) {
       activeEl.style.display = 'block';
@@ -2049,28 +2032,16 @@ async function loadPredictions(broadcasterId) {
     }
 
     if (historyList) {
-      historyList.innerHTML = '';
-      history.slice(0, 10).forEach(p => {
-        const li = document.createElement('li');
-        li.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;';
-        const winner = p.winning_outcome_id ? p.outcomes.find(o => o.id === p.winning_outcome_id) : null;
-        li.innerHTML =
-          '<span style="font-weight:600;">' + escapeHtml(p.title) + '</span>' +
-          (winner ? ' <span style="color:#9acd32;">&#8594; ' + escapeHtml(winner.title) + '</span>' : '') +
-          '<br><span style="color:var(--text-muted);">' +
-          new Date(p.created_at).toLocaleString('fr-FR') + ' &bull; ' + renderStatusLabel(p.status) +
-          '</span>';
-        historyList.appendChild(li);
-      });
+      historyList.replaceChildren(...history.slice(0, 10).map(renderPredictionHistoryItem));
       if (history.length === 0) {
-        historyList.innerHTML = '<li style="color:var(--text-muted);font-size:12px;padding:4px 0;">Aucun historique.</li>';
+        historyList.replaceChildren(Object.assign(document.createElement('li'), { className: 'pred-empty', textContent: 'Aucune prédiction passée.' }));
       }
     }
   } catch (err) {
     statusEl.style.display = 'block';
     statusEl.textContent = /Missing scope/i.test(err.message)
-      ? 'Permission manquante : deconnecte-toi puis reconnecte-toi pour autoriser les predictions.'
-      : 'Erreur : ' + err.message;
+      ? 'Permission manquante : déconnecte-toi puis reconnecte-toi pour autoriser les prédictions.'
+      : '⚠️ ' + err.message;
     console.error('loadPredictions:', err);
   }
 }
@@ -2087,58 +2058,82 @@ function renderActivePrediction(p) {
   const endsAt = p.locked_at
     ? new Date(p.locked_at)
     : new Date(new Date(p.created_at).getTime() + p.prediction_window * 1000);
-  const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
-  metaEl.innerHTML = renderStatusLabel(p.status) + ' &bull; ' +
-    (remaining > 0 ? remaining + 's restantes' : 'Terminee');
+  // Compte à rebours en direct : à la fin du vote, Twitch verrouille tout seul, le panneau se recharge
+  clearInterval(_predictionsState.countdown);
+  const tick = () => {
+    const remaining = Math.max(0, Math.floor((endsAt - Date.now()) / 1000));
+    const clock = `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`;
+    metaEl.innerHTML = renderStatusLabel(p.status) + '<span class="pred-countdown">' +
+      (p.status === 'ACTIVE' && remaining > 0 ? '⏱ ' + clock + ' restantes' : 'Votes terminés : choisis le gagnant') + '</span>';
+    if (p.status === 'ACTIVE' && remaining <= 0) {
+      clearInterval(_predictionsState.countdown);
+      const broadcasterId = _predictionsState.broadcasterId;
+      setTimeout(() => { if (_predictionsState.broadcasterId === broadcasterId) loadPredictions(broadcasterId); }, 2000);
+    }
+  };
+  tick();
+  if (p.status === 'ACTIVE') _predictionsState.countdown = setInterval(tick, 1000);
 
   const totalPoints = p.outcomes.reduce((sum, o) => sum + (o.channel_points || 0), 0);
-  outcomesEl.innerHTML = '';
-  p.outcomes.forEach((o, i) => {
+  outcomesEl.replaceChildren(...p.outcomes.map((o, i) => {
     const pct = totalPoints ? Math.round((o.channel_points || 0) / totalPoints * 100) : 0;
-    const bar = document.createElement('div');
-    bar.style.cssText = 'margin-bottom:6px;';
-    bar.innerHTML =
-      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">' +
-      '<span>' + escapeHtml(o.title) + '</span>' +
-      '<span>' + (o.users || 0) + ' votants &bull; ' + pct + '%</span>' +
+    const row = document.createElement('div');
+    row.className = `pred-outcome pred-color-${predictionColor(o, i, p.outcomes.length)}`;
+    row.innerHTML =
+      '<div class="pred-outcome-head">' +
+      '<span class="pred-outcome-title"></span>' +
+      '<span class="pred-outcome-stats">' + (o.channel_points || 0).toLocaleString('fr-FR') + ' pts · ' +
+      (o.users || 0) + ' votant' + ((o.users || 0) > 1 ? 's' : '') + ' · <strong>' + pct + ' %</strong></span>' +
       '</div>' +
-      '<div style="background:var(--bg-primary);border-radius:4px;height:6px;">' +
-      '<div style="background:' + (i === 0 ? '#9146ff' : '#00aaff') + ';width:' + pct + '%;height:6px;border-radius:4px;transition:width 0.3s;"></div>' +
-      '</div>';
-    outcomesEl.appendChild(bar);
-  });
+      '<div class="pred-bar"><div class="pred-bar-fill" style="width:' + pct + '%"></div></div>';
+    row.querySelector('.pred-outcome-title').textContent = o.title;
+    return row;
+  }));
 
-  actionsRow.innerHTML = '';
+  const button = (className, text, onClick) => {
+    const btn = Object.assign(document.createElement('button'), { className, textContent: text });
+    btn.addEventListener('click', onClick);
+    return btn;
+  };
+  const cancelBtn = () => button('btn-secondary pred-btn-danger', '✖ Annuler (rembourse)', () => predictionAction(p.id, 'CANCELED', null));
+
+  actionsRow.replaceChildren();
   if (p.status === 'ACTIVE') {
-    const btnLock = document.createElement('button');
-    btnLock.className = 'btn-secondary btn-sm';
-    btnLock.textContent = 'Verrouiller';
-    btnLock.onclick = () => predictionAction(p.id, 'LOCKED', null);
-    actionsRow.appendChild(btnLock);
-
-    const btnCancel = document.createElement('button');
-    btnCancel.className = 'btn-secondary btn-sm';
-    btnCancel.style.color = '#ff6b6b';
-    btnCancel.textContent = 'Annuler';
-    btnCancel.onclick = () => predictionAction(p.id, 'CANCELED', null);
-    actionsRow.appendChild(btnCancel);
+    actionsRow.append(button('btn-secondary', '🔒 Verrouiller', () => predictionAction(p.id, 'LOCKED', null)), cancelBtn());
   }
-
   if (p.status === 'LOCKED') {
-    p.outcomes.forEach(o => {
-      const btn = document.createElement('button');
-      btn.className = 'btn-primary btn-sm';
-      btn.textContent = 'Gagnant : ' + o.title;
-      btn.onclick = () => predictionAction(p.id, 'RESOLVED', o.id);
-      actionsRow.appendChild(btn);
+    p.outcomes.forEach((o, i) => {
+      actionsRow.appendChild(button(`btn-secondary pred-btn-winner pred-color-${predictionColor(o, i, p.outcomes.length)}`,
+        '🏆 ' + o.title, () => predictionAction(p.id, 'RESOLVED', o.id)));
     });
-    const btnCancel = document.createElement('button');
-    btnCancel.className = 'btn-secondary btn-sm';
-    btnCancel.style.color = '#ff6b6b';
-    btnCancel.textContent = 'Annuler';
-    btnCancel.onclick = () => predictionAction(p.id, 'CANCELED', null);
-    actionsRow.appendChild(btnCancel);
+    actionsRow.appendChild(cancelBtn());
   }
+}
+
+// Couleur Twitch d'un choix : bleu / rose pour deux choix, bleu au-delà
+function predictionColor(outcome, index, count) {
+  if (outcome.color) return outcome.color.toLowerCase() === 'pink' ? 'pink' : 'blue';
+  return count === 2 && index === 1 ? 'pink' : 'blue';
+}
+
+function renderPredictionHistoryItem(p) {
+  const winner = p.winning_outcome_id ? p.outcomes.find(o => o.id === p.winning_outcome_id) : null;
+  const li = document.createElement('li');
+  li.className = 'mod-action-item pred-history-item';
+  li.innerHTML =
+    '<span class="mod-action-icon">' + (p.status === 'CANCELED' ? '✖️' : '🏆') + '</span>' +
+    '<div class="pred-history-text">' +
+    '<div class="pred-history-title"></div>' +
+    '<div class="pred-history-meta">' + renderStatusLabel(p.status) +
+    ' <span class="pred-history-winner"></span> · ' + new Date(p.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) +
+    '</div></div>';
+  li.querySelector('.pred-history-title').textContent = p.title;
+  if (winner) {
+    const w = li.querySelector('.pred-history-winner');
+    w.textContent = '→ ' + winner.title;
+    w.classList.add(`pred-color-${predictionColor(winner, p.outcomes.indexOf(winner), p.outcomes.length)}`);
+  }
+  return li;
 }
 
 async function predictionAction(predictionId, status, winningOutcomeId) {
@@ -2151,6 +2146,7 @@ async function predictionAction(predictionId, status, winningOutcomeId) {
   } catch (err) {
     console.error('predictionAction:', err);
     alert('Erreur : ' + err.message);
+    loadPredictions(broadcasterId); // l'état a pu changer côté Twitch (verrouillage automatique…)
   }
 }
 
@@ -2163,14 +2159,14 @@ async function createPredictionFromForm() {
   const outcomes = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
   const fb = document.getElementById('prediction-create-feedback');
 
-  if (!title) { if(fb){fb.textContent='Entrez une question.';fb.className='action-feedback error';} return; }
-  if (outcomes.length < 2) { if(fb){fb.textContent='Au moins 2 choix requis.';fb.className='action-feedback error';} return; }
+  if (!title) { if(fb){fb.textContent='Saisis une question.';fb.className='action-feedback error';} return; }
+  if (outcomes.length < 2) { if(fb){fb.textContent='Il faut au moins 2 choix.';fb.className='action-feedback error';} return; }
 
-  if (fb) { fb.textContent = 'Creation en cours...'; fb.className = 'action-feedback'; }
+  if (fb) { fb.textContent = 'Création en cours…'; fb.className = 'action-feedback'; }
   try {
     const res = await window.electronAPI.createPrediction(broadcasterId, { title, outcomes, prediction_window: duration });
-    if (!res.success) throw new Error(res.error || 'Echec creation');
-    if (fb) { fb.textContent = 'Prediction creee !'; fb.className = 'action-feedback success'; }
+    if (!res.success) throw new Error(res.error || 'Échec de la création');
+    if (fb) { fb.textContent = '✅ Prédiction lancée !'; fb.className = 'action-feedback success'; }
     const modal = document.getElementById('prediction-modal');
     if (modal) modal.style.display = 'none';
     setTimeout(() => loadPredictions(broadcasterId), 1200);
@@ -2180,13 +2176,9 @@ async function createPredictionFromForm() {
 }
 
 function renderStatusLabel(status) {
-  const labels = {
-    ACTIVE: '<span style="color:#9acd32;font-weight:600;">ACTIVE</span>',
-    LOCKED: '<span style="color:#ffa500;font-weight:600;">VERROUILLEE</span>',
-    RESOLVED: '<span style="color:#888;">RESOLUE</span>',
-    CANCELED: '<span style="color:#ff6b6b;">ANNULEE</span>'
-  };
-  return labels[status] || status;
+  const labels = { ACTIVE: '● Votes ouverts', LOCKED: '🔒 Verrouillée', RESOLVED: 'Résolue', CANCELED: 'Annulée' };
+  const key = labels[status] ? status.toLowerCase() : 'other';
+  return '<span class="pred-status pred-status-' + key + '">' + (labels[status] || escapeHtml(String(status))) + '</span>';
 }
 
 function setupPredictionsWidget() {
@@ -2198,7 +2190,7 @@ function setupPredictionsWidget() {
 
   if (btnNew) {
     btnNew.onclick = () => {
-      if (modal) modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+      if (modal) modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
     };
   }
   if (btnRefresh) {

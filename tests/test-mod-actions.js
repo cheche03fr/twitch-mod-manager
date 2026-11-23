@@ -87,7 +87,32 @@ assert.ok(!hasModActionsScopes(['moderator:read:vips']), 'scopes incomplets dét
 
 // Modification de la chaîne d'un autre streamer par l'API interne de Twitch
 const { buildChannelEditOperations, buildStartAdOperation, gqlError, parseAdCooldown } = require('../src/twitchChannelEdit');
-const adJson = [{ data: { user: { adProperties: { frequency: 480, lastTriggeredAt: '2026-11-22T23:21:53Z' } } } }];
+// Prédictions sur la chaîne d'un autre streamer
+const { parsePredictionContext, buildCreatePredictionOperation, buildUpdatePredictionOperation } = require('../src/twitchPredictions');
+const predNode = (id, extra = {}) => ({
+  id, title: 'Top 1 ?', createdAt: '2026-11-22T23:47:40Z', lockedAt: null, predictionWindowSeconds: 30,
+  outcomes: [{ id: 'o1', title: 'Oui', color: 'BLUE', totalPoints: 100, totalUsers: 2 }, { id: 'o2', title: 'Non', color: 'PINK', totalPoints: 0, totalUsers: 0 }],
+  winningOutcome: null, ...extra
+});
+const preds = parsePredictionContext([{ data: { community: { channel: {
+  activePredictionEvents: [predNode('a')],
+  lockedPredictionEvents: [predNode('l', { lockedAt: '2026-11-22T23:48:10Z' })],
+  resolvedPredictionEvents: { edges: [{ node: predNode('r', { status: 'RESOLVED', winningOutcome: { id: 'o2' } }) }] }
+} } } }]);
+assert.deepStrictEqual(preds.map(p => [p.id, p.status]), [['a', 'ACTIVE'], ['l', 'LOCKED'], ['r', 'RESOLVED']]);
+assert.deepStrictEqual(preds[0].outcomes[0], { id: 'o1', title: 'Oui', color: 'BLUE', channel_points: 100, users: 2 });
+assert.strictEqual(preds[2].winning_outcome_id, 'o2');
+assert.deepStrictEqual(buildCreatePredictionOperation('143330248', { title: ' Q ', outcomes: ['Oui', 'Non'], prediction_window: 60 }).variables.input, {
+  title: 'Q', channelID: '143330248', outcomes: [{ title: 'Oui', color: 'BLUE' }, { title: 'Non', color: 'PINK' }], predictionWindowSeconds: 60
+});
+assert.throws(() => buildCreatePredictionOperation('1', { title: 'Q', outcomes: ['Seul'] }), /2 à 10 choix/);
+const uuid = '4936a35a-658d-45b6-b9c8-bdc50740254d';
+assert.strictEqual(buildUpdatePredictionOperation(uuid, 'LOCKED').operationName, 'LockPrediction');
+assert.strictEqual(buildUpdatePredictionOperation(uuid, 'CANCELED').operationName, 'DeletePrediction');
+assert.deepStrictEqual(buildUpdatePredictionOperation(uuid, 'RESOLVED', uuid).variables.input, { eventID: uuid, outcomeID: uuid });
+assert.throws(() => buildUpdatePredictionOperation('pas-un-id', 'LOCKED'), /invalide/);
+
+const adJson =[{ data: { user: { adProperties: { frequency: 480, lastTriggeredAt: '2026-11-22T23:21:53Z' } } } }];
 assert.strictEqual(parseAdCooldown(adJson, Date.parse('2026-11-22T23:25:00Z')), '2026-11-22T23:29:53.000Z', 'pubs bloquées');
 assert.strictEqual(parseAdCooldown(adJson, Date.parse('2026-11-22T23:30:00Z')), null, 'délai écoulé');
 assert.strictEqual(parseAdCooldown([{ data: { user: { adProperties: { frequency: 480, lastTriggeredAt: null } } } }]), null, 'aucune pub passée');

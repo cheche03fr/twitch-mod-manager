@@ -73,7 +73,9 @@ Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a 
 
 ### Prédictions
 - Sur **votre propre chaîne** : créer une prédiction, la verrouiller, choisir le gagnant ou l'annuler, et consulter l'historique.
-- Sur la chaîne d'un **autre streamer** : l'API Twitch réserve les prédictions au propriétaire de la chaîne. Le panneau propose alors le bouton **🔮 Gérer les prédictions dans la Vue Twitch officielle**, qui ouvre la Mod View de Twitch dans l'application.
+- Sur la chaîne d'un **autre streamer** : les mêmes actions, directement dans le panneau. L'API officielle réservant les prédictions au propriétaire, elles passent par la session de l'onglet **Vue Twitch officielle** (il faut s'y être connecté une fois), comme la Mod View de twitch.tv. *API interne de Twitch, non officielle, qui peut cesser de fonctionner si Twitch la modifie.*
+- Le temps de vote restant défile en direct ; à la fin, Twitch verrouille la prédiction tout seul et le panneau se met à jour pour proposer le choix du gagnant.
+- Le panneau reprend le style du reste de l'application : choix en **bleu** et **rose** comme sur Twitch, barres de points et de votants, état en pastille (votes ouverts, verrouillée, résolue, annulée), et un formulaire « ＋ Nouvelle » pour la question, les choix et la durée du vote.
 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite :
@@ -90,7 +92,7 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
 - La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
-- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos ou lancer une pub sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
+- La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur).
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.
 

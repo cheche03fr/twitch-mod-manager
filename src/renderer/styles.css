@@ -1962,3 +1962,78 @@ body.is-panel-dragging, body.is-panel-dragging .widget-header { cursor: grabbing
 .in-tab .channel-tabs,
 .in-tab #dashboard-screen,
 .in-tab #btn-back-to-channels { display: none !important; }
+
+/* ========================================================
+   Prédictions
+   ======================================================== */
+.predictions-body { gap: 10px; }
+.pred-color-blue { --pred-color: #387aff; }
+.pred-color-pink { --pred-color: #f5009b; }
+
+.btn-pred-new {
+  background: var(--twitch-purple);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.btn-pred-new:hover { background: var(--twitch-purple-hover); }
+
+.pred-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 14px 8px; }
+
+.pred-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pred-title { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+.pred-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); }
+.pred-countdown { font-variant-numeric: tabular-nums; }
+
+.pred-status {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.pred-status-active { background: rgba(46, 204, 113, 0.12); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); }
+.pred-status-locked { background: rgba(245, 166, 35, 0.12); color: #f5a623; border: 1px solid rgba(245, 166, 35, 0.3); }
+.pred-status-resolved { background: rgba(145, 70, 255, 0.12); color: var(--twitch-purple); border: 1px solid rgba(145, 70, 255, 0.3); }
+.pred-status-canceled, .pred-status-other { background: rgba(231, 76, 60, 0.1); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.25); }
+
+.pred-outcomes-list { display: flex; flex-direction: column; gap: 8px; }
+.pred-outcome-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin-bottom: 4px; }
+.pred-outcome-title { font-weight: 700; color: var(--pred-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pred-outcome-stats { color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pred-outcome-stats strong { color: var(--text-primary); }
+.pred-bar { height: 6px; border-radius: 3px; background: var(--bg-primary); overflow: hidden; }
+.pred-bar-fill { height: 100%; border-radius: 3px; background: var(--pred-color); transition: width 0.3s; }
+
+.pred-actions-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.pred-btn-danger { color: #ff6b6b; }
+.pred-btn-danger:hover { border-color: #ff6b6b; }
+.pred-btn-winner { border-color: var(--pred-color); color: var(--pred-color); font-weight: 700; }
+.pred-btn-winner:hover { background: var(--pred-color); border-color: var(--pred-color); color: #fff; }
+
+.pred-section-label { text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+.pred-history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.pred-history-text { min-width: 0; }
+.pred-history-title { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.pred-history-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.pred-history-winner { color: var(--pred-color, var(--text-secondary)); font-weight: 700; }
+
+.pred-form { border-color: var(--twitch-purple); }
+.pred-outcome-inputs { display: flex; flex-direction: column; gap: 6px; }
+.pred-outcome-input { border-left: 3px solid var(--pred-color) !important; }
+.pred-form-footer { display: flex; align-items: center; gap: 8px; }
+.pred-duration { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-right: auto; }
+.pred-duration select { padding: 5px 8px; cursor: pointer; }
+.pred-form .action-feedback:empty { display: none; }

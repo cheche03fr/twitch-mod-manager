@@ -31,7 +31,7 @@ Le bouton **🔄 Rechercher une mise à jour** des Paramètres lance la recherch
 ## 🚀 Fonctionnalités
 
 ### Vos chaînes modérées
-- **Détection automatique** de toutes les chaînes où vous êtes modérateur, plus **votre propre chaîne** (badge « Ma chaîne »).
+- **Détection automatique** de toutes les chaînes où vous êtes modérateur, plus **votre propre chaîne** (badge « Ma chaîne »), toujours affichée **en premier**, quel que soit le tri.
 - **Statut en direct** : titre du live, jeu, nombre de spectateurs et avatar du streamer.
 - **Recherche** par chaîne ou par jeu, **filtres** *Toutes / En direct / Hors ligne*, **tri** *En direct d'abord / Spectateurs / Nom (A-Z, Z-A)*.
 - **Actualisation automatique** des statuts (intervalle réglable dans les Paramètres).

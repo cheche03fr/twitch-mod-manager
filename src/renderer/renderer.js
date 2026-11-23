@@ -993,6 +993,7 @@ function renderChannels() {
   }
 
   list.sort((a, b) => {
+    if (Boolean(a.isOwn) !== Boolean(b.isOwn)) return a.isOwn ? -1 : 1; // sa propre chaîne toujours en premier
     switch (state.sortBy) {
       case 'live-first':
         if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;

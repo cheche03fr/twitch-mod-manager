@@ -2057,3 +2057,7 @@ body.is-panel-dragging, body.is-panel-dragging .widget-header { cursor: grabbing
 .btn-install-update:disabled { animation: none; opacity: 0.7; cursor: wait; }
 @keyframes update-pulse { 70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); } }
 @media (prefers-reduced-motion: reduce) { .btn-install-update { animation: none; } }
+
+/* Connexion automatique / onglet de chaîne : pas de page de connexion pendant la vérification de la session */
+.auto-login #auth-screen,
+.in-tab #auth-screen { display: none; }

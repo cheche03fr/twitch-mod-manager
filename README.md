@@ -9,7 +9,7 @@ Application de bureau Windows pour voir et modérer, depuis une seule fenêtre, 
 1. Téléchargez **`Twitch-Mod-Manager-Setup-x.y.z.exe`** depuis la [dernière version](https://github.com/cheche03fr/twitch-mod-manager/releases/latest).
 2. Lancez l'installeur et choisissez le dossier d'installation.
    *Si Windows SmartScreen affiche « Windows a protégé votre ordinateur », cliquez sur **Informations complémentaires** puis **Exécuter quand même** : l'installeur est signé par `cheche03fr` avec un certificat personnel, non reconnu par défaut.*
-3. Ouvrez l'application, cliquez sur **Se connecter avec Twitch** et autorisez l'accès dans votre navigateur.
+3. Ouvrez l'application, cliquez sur **Se connecter avec Twitch** et autorisez l'accès dans votre navigateur. Aux démarrages suivants, ce bouton réutilise la session enregistrée, sans repasser par le navigateur ; cochez **Connexion automatique au démarrage** dans les ⚙️ Paramètres pour ouvrir directement vos chaînes.
 
 ### Mises à jour automatiques
 
@@ -84,6 +84,7 @@ Le rôle est vérifié chaîne par chaîne auprès de Twitch. Si la chaîne n'a 
 ### ⚙️ Paramètres
 Bouton **⚙️** en haut à droite :
 - **Actualisation automatique des chaînes** : une case à cocher pour l'activer ou la désactiver, et un curseur pour choisir l'intervalle, de **30 à 120 secondes** par pas de 15 (30 s par défaut).
+- **Connexion automatique au démarrage** (décochée par défaut) : cochée, l'application ouvre directement vos chaînes sans afficher la page de connexion ; décochée, la page de connexion s'affiche à chaque démarrage.
 - **Thème** : 🌙 **Sombre** (par défaut) ou ☀️ **Clair**. Le changement est immédiat ; le chat Twitch intégré prend le thème à sa prochaine ouverture.
 
 - **Recevoir les versions bêta** : voir [Versions bêta](#versions-bêta).

@@ -777,6 +777,11 @@ function switchModTab(tabName) {
  * Vérifie si une session valide est déjà sauvegardée
  */
 async function checkExistingSession() {
+  // Sans « Connexion automatique », la page de connexion s'affiche ; la session enregistrée sert au clic sur « Se connecter »
+  if (!isTabView && !state.settings.autoLogin) {
+    showAuthScreen();
+    return;
+  }
   try {
     const res = await window.electronAPI.checkSession();
     if (res.authenticated && res.user) {
@@ -795,10 +800,18 @@ async function checkExistingSession() {
  */
 async function handleLogin() {
   dom.btnLogin.disabled = true;
-  dom.authStatus.innerText = 'Ouverture de Twitch dans votre navigateur...';
+  dom.authStatus.innerText = 'Connexion…';
   dom.authStatus.style.color = '#bf94ff';
 
   try {
+    // Session déjà enregistrée et valide : connexion directe, sans repasser par le navigateur
+    const saved = await window.electronAPI.checkSession();
+    if (saved.authenticated && saved.user) {
+      dom.authStatus.innerText = '';
+      onUserAuthenticated(saved.user);
+      return;
+    }
+    dom.authStatus.innerText = 'Ouverture de Twitch dans votre navigateur...';
     const result = await window.electronAPI.login();
     if (result.success && result.user) {
       dom.authStatus.innerText = '';
@@ -851,6 +864,7 @@ function onUserAuthenticated(user) {
 }
 
 function showAuthScreen() {
+  document.documentElement.classList.remove('auto-login');
   dom.authScreen.classList.remove('hidden');
   dom.dashboardScreen.classList.add('hidden');
   dom.modScreen.classList.add('hidden');
@@ -1958,6 +1972,10 @@ function setupSettings() {
     updateSettings({ betaUpdates: e.target.checked });
     checkUpdates();
   });
+
+  const autoLoginCheckbox = document.getElementById('setting-auto-login');
+  autoLoginCheckbox.checked = state.settings.autoLogin;
+  autoLoginCheckbox.addEventListener('change', (e) => updateSettings({ autoLogin: e.target.checked }));
 
   const autoUpdatesCheckbox = document.getElementById('setting-auto-updates');
   autoUpdatesCheckbox.checked = state.settings.autoUpdates;

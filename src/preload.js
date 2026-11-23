@@ -18,7 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onTabRefocused: (callback) => ipcRenderer.on('tabs:refocused', () => callback()),
 
   getAppInfo: () => ipcRenderer.invoke('app:get-info'),
-  checkForUpdates: (beta, manual = false) => ipcRenderer.invoke('app:check-updates', beta, manual),
+  checkForUpdates: (beta, manual = false, auto = false) => ipcRenderer.invoke('app:check-updates', beta, manual, auto),
+  installUpdate: () => ipcRenderer.invoke('app:install-update'),
+  onUpdateReady: (callback) => ipcRenderer.on('app:update-ready', (_e, data) => callback(data)),
 
   // Modération spécifique
   getModerationRights: (broadcasterId) => ipcRenderer.invoke('twitch:get-moderation-rights', broadcasterId),

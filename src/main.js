@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, WebContentsView, ipcMain, shell, session, dialog } = require('electron');
+﻿const { app, BrowserWindow, WebContentsView, ipcMain, shell, session } = require('electron');
 const path = require('path');
 const AuthManager = require('./authManager');
 const TwitchService = require('./twitchService');
@@ -8,6 +8,7 @@ const { EventSubClient, hasModActionsScopes } = require('./eventSubClient');
 const { fetchTwitchModLog } = require('./twitchModLog');
 const { updateChannelViaWeb, startAdViaWeb, fetchAdCooldown } = require('./twitchChannelEdit');
 const { getPredictionsViaWeb, createPredictionViaWeb, updatePredictionViaWeb } = require('./twitchPredictions');
+const updater = require('./updater');
 
 let mainWindow = null;
 let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
@@ -205,57 +206,21 @@ if (!singleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+    updater.setup({ mainWindowGetter: () => mainWindow });
+    // Mise à jour automatique téléchargée mais pas installée : écran « Mise à jour en cours », puis redémarrage
+    if (await updater.installPendingUpdateAtStartup()) return;
     restrictPermissions(session.defaultSession);
     restrictPermissions(session.fromPartition('persist:twitch_mod'));
     await AuthManager.loadSession(); // avant la page : elle vérifie la session dès son chargement
     setupIpcHandlers();
     await createWindow();
-    // La recherche de mise à jour est lancée par la page (app:check-updates), qui connaît le choix bêta
+    updater.closeStartupSplash();
+    // La recherche de mise à jour est lancée par la page (app:check-updates), qui connaît les choix bêta et automatique
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) await createWindow();
     });
   });
-}
-
-/**
- * Mise à jour depuis les Releases de cheche03fr/twitch-mod-manager :
- * téléchargement en fond, puis une fenêtre demande si on installe.
- * beta = true : les pré-versions (tags v1.2.3-beta.1) sont aussi proposées.
- */
-let autoUpdater = null;
-let promptedVersion = null;
-
-/**
- * manual = true (bouton des Paramètres) : la fenêtre d'installation est reproposée même après « Plus tard ».
- * Renvoie { updateAvailable, version } ; lève une erreur si GitHub est injoignable.
- */
-async function checkForUpdates(beta, manual) {
-  if (!autoUpdater) {
-    autoUpdater = require('electron-updater').autoUpdater;
-    autoUpdater.autoInstallOnAppQuit = false; // n'installe jamais sans accord
-    autoUpdater.on('update-downloaded', promptInstall);
-    autoUpdater.on('error', err => console.error('Mise à jour impossible:', err.message));
-  }
-  if (manual) promptedVersion = null;
-  autoUpdater.allowPrerelease = beta;
-  const result = await autoUpdater.checkForUpdates();
-  return { updateAvailable: Boolean(result?.isUpdateAvailable), version: result?.updateInfo?.version || null };
-}
-
-async function promptInstall(info) {
-  if (promptedVersion === info.version) return; // déjà proposée (nouvelle recherche après changement du choix bêta)
-  promptedVersion = info.version;
-  const { response } = await dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: 'Mise à jour disponible',
-    message: `La version ${info.version} de Twitch Mod Manager est disponible.`,
-    detail: `Version actuelle : ${app.getVersion()}\n\nVoulez-vous l'installer maintenant ? L'application va redémarrer.`,
-    buttons: ['Installer maintenant', 'Plus tard'],
-    defaultId: 0,
-    cancelId: 1
-  });
-  if (response === 0) autoUpdater.quitAndInstall();
 }
 
 app.on('window-all-closed', () => {
@@ -750,10 +715,16 @@ function setupIpcHandlers() {
     }
   });
   // Recherche de mise à jour, voie bêta ou normale (rien en développement)
-  ipcMain.handle('app:check-updates', async (event, beta, manual) => {
+  // Bouton « Mettre à jour » de l'en-tête (mode automatique, mise à jour déjà téléchargée)
+  ipcMain.handle('app:install-update', async (event) => {
+    if (!mainWindow || event.sender !== mainWindow.webContents) return { success: false };
+    return { success: updater.installNow() };
+  });
+
+  ipcMain.handle('app:check-updates', async (event, beta, manual, auto) => {
     if (!app.isPackaged) return { success: false, error: 'version de développement' };
     try {
-      const result = await checkForUpdates(beta === true, manual === true);
+      const result = await updater.checkForUpdates(beta === true, manual === true, auto === true);
       return { success: true, ...result };
     } catch (err) {
       console.error('Mise à jour impossible:', err.message);

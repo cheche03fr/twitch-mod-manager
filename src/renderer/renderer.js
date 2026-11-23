@@ -1952,13 +1952,39 @@ function setupSettings() {
 
   const betaCheckbox = document.getElementById('setting-beta-updates');
   betaCheckbox.checked = state.settings.betaUpdates;
+  const checkUpdates = (manual = false) =>
+    window.electronAPI.checkForUpdates(state.settings.betaUpdates, manual, state.settings.autoUpdates);
   betaCheckbox.addEventListener('change', (e) => {
     updateSettings({ betaUpdates: e.target.checked });
-    window.electronAPI.checkForUpdates(state.settings.betaUpdates);
+    checkUpdates();
+  });
+
+  const autoUpdatesCheckbox = document.getElementById('setting-auto-updates');
+  autoUpdatesCheckbox.checked = state.settings.autoUpdates;
+  autoUpdatesCheckbox.addEventListener('change', (e) => {
+    updateSettings({ autoUpdates: e.target.checked });
+    if (!state.settings.autoUpdates) document.getElementById('btn-install-update').classList.add('hidden');
+    checkUpdates();
+  });
+
+  // Mode automatique : bouton « Mettre à jour » dans l'en-tête dès que la mise à jour est téléchargée
+  const btnInstallUpdate = document.getElementById('btn-install-update');
+  window.electronAPI.onUpdateReady(({ version }) => {
+    btnInstallUpdate.textContent = `⬆️ Mettre à jour (v${version})`;
+    btnInstallUpdate.classList.remove('hidden');
+  });
+  btnInstallUpdate.addEventListener('click', async () => {
+    btnInstallUpdate.disabled = true;
+    btnInstallUpdate.textContent = '⏳ Installation…';
+    const res = await window.electronAPI.installUpdate();
+    if (!res.success) {
+      btnInstallUpdate.disabled = false;
+      btnInstallUpdate.textContent = '⬆️ Mettre à jour';
+    }
   });
 
   // Recherche de mise à jour au démarrage, sur la voie choisie (bêta ou normale) ; une seule fois, par la fenêtre principale
-  if (!isTabView) window.electronAPI.checkForUpdates(state.settings.betaUpdates);
+  if (!isTabView) checkUpdates();
 
   const btnCheckUpdates = document.getElementById('btn-check-updates');
   const updateStatus = document.getElementById('update-check-status');
@@ -1966,11 +1992,13 @@ function setupSettings() {
     btnCheckUpdates.disabled = true;
     updateStatus.textContent = 'Recherche en cours…';
     try {
-      const res = await window.electronAPI.checkForUpdates(state.settings.betaUpdates, true);
+      const res = await checkUpdates(true);
       if (!res.success) {
         updateStatus.textContent = `Recherche impossible : ${res.error}`;
       } else if (res.updateAvailable) {
-        updateStatus.textContent = `Version ${res.version} trouvée : téléchargement en cours, l'installation vous sera proposée.`;
+        updateStatus.textContent = state.settings.autoUpdates
+          ? `Version ${res.version} trouvée : téléchargement en cours, puis bouton « ⬆️ Mettre à jour » à côté de ⚙️.`
+          : `Version ${res.version} trouvée : téléchargement en cours, l'installation vous sera proposée.`;
       } else {
         updateStatus.textContent = `✅ Vous avez la dernière version (${res.version}).`;
       }

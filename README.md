@@ -91,7 +91,9 @@ Les choix sont enregistrés et retrouvés au prochain démarrage.
 ## 🔐 Sécurité et vie privée
 
 - **Connexion officielle Twitch (OAuth)** : votre mot de passe n'est jamais saisi dans l'application, l'autorisation se fait dans votre navigateur.
-- La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`. Le bouton **Déconnexion** la supprime.
+- La session est enregistrée uniquement sur votre PC, dans `%APPDATA%\twitch-mod-manager\data`, **chiffrée par Windows** et liée à votre compte Windows (une session déjà enregistrée en clair est chiffrée au prochain démarrage). Le bouton **Déconnexion** la supprime.
+- Les sites intégrés (twitch.tv) ne reçoivent **aucune permission** (caméra, micro, notifications…), sauf le plein écran et la copie dans le presse-papiers.
+- La **Vue Twitch officielle** reste sur twitch.tv : un lien vers un autre site s'ouvre dans votre navigateur.
 - La session twitch.tv de la **Vue Twitch officielle** sert aussi à lire l'historique des Actions de Modérateur et à modifier les infos, lancer une pub ou gérer les prédictions sur la chaîne d'un autre streamer ; elle reste dans l'application et n'est envoyée qu'à Twitch.
 - L'application ne demande que les autorisations nécessaires : lecture des chaînes modérées et des spectateurs, sanctions, messages et paramètres du chat, mode bouclier, informations de la chaîne, éditeurs, publicités et prédictions, et lecture des VIP, modérateurs, avertissements, termes bloqués et demandes de débannissement (pour les Actions de Modérateur).
 - Après une mise à jour qui ajoute une autorisation, l'application vous demande de vous **déconnecter puis reconnecter** une fois.

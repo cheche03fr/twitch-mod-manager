@@ -151,6 +151,15 @@ app.on('web-contents-created', (event, contents) => {
     });
   }
 
+  // La webview (Vue Twitch officielle) reste sur twitch.tv : un lien extérieur s'ouvre dans le navigateur
+  if (contents.getType() === 'webview') {
+    contents.on('will-navigate', (e, url) => {
+      if (isTwitchUrl(url) || url === 'about:blank') return;
+      e.preventDefault();
+      if (url.startsWith('https://') || url.startsWith('http://')) shell.openExternal(url);
+    });
+  }
+
   // La webview (Mod View Twitch) n'a jamais de preload ni d'accès Node
   contents.on('will-attach-webview', (e, webPreferences, params) => {
     delete webPreferences.preload;
@@ -159,6 +168,15 @@ app.on('web-contents-created', (event, contents) => {
     if (params.src && params.src !== 'about:blank' && !isTwitchUrl(params.src)) e.preventDefault();
   });
 });
+
+// Electron accorde par défaut toutes les permissions demandées (caméra, micro, notifications…) :
+// seules celles utiles au lecteur et au chat Twitch sont accordées
+const ALLOWED_PERMISSIONS = new Set(['fullscreen', 'clipboard-sanitized-write']);
+function restrictPermissions(electronSession) {
+  electronSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    callback(ALLOWED_PERMISSIONS.has(permission));
+  });
+}
 
 function isAppUrl(url) {
   return url.startsWith(`http://localhost:${PORT}/`) || url.startsWith('file://');
@@ -187,6 +205,8 @@ if (!singleInstanceLock) {
   });
 
   app.whenReady().then(async () => {
+    restrictPermissions(session.defaultSession);
+    restrictPermissions(session.fromPartition('persist:twitch_mod'));
     setupIpcHandlers();
     await createWindow();
     // La recherche de mise à jour est lancée par la page (app:check-updates), qui connaît le choix bêta

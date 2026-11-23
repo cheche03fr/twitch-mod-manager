@@ -1032,12 +1032,12 @@ function createChannelCard(channel) {
 
   cardTop.innerHTML = `
     <div class="avatar-wrapper">
-      <img class="channel-avatar" src="${avatarUrl}" alt="${channel.name}" loading="lazy">
+      <img class="channel-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(channel.name)}" loading="lazy">
       ${channel.isLive ? '<span class="live-indicator">LIVE</span>' : ''}
     </div>
     <div class="channel-names">
       <div class="channel-title-row">
-        <span class="channel-name" title="${channel.name}">${escapeHtml(channel.name)}</span>
+        <span class="channel-name" title="${escapeHtml(channel.name)}">${escapeHtml(channel.name)}</span>
         <span class="status-tag ${channel.isLive ? 'live' : 'offline'}">
           ${channel.isLive ? '🔴 EN DIRECT' : 'Hors ligne'}
         </span>
@@ -1716,7 +1716,7 @@ function renderCategoryDropdown(games) {
       : '';
 
     option.innerHTML = `
-      ${boxArt ? `<img src="${boxArt}" alt="${game.name}">` : ''}
+      ${boxArt ? `<img src="${escapeHtml(boxArt)}" alt="${escapeHtml(game.name)}">` : ''}
       <span>${escapeHtml(game.name)}</span>
     `;
 

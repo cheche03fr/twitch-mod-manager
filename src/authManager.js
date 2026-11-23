@@ -1,9 +1,10 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
-const { app, shell } = require('electron');
+const { app, shell, safeStorage } = require('electron');
 const { CLIENT_ID, REDIRECT_URI, SCOPES } = require('./config');
 const localServer = require('./localServer');
+const { sealSession, openSession } = require('./sessionSeal');
 
 // Une fois compilée, l'app est dans app.asar (lecture seule) : on stocke la session dans %APPDATA%
 const DATA_DIR = app.isPackaged
@@ -16,17 +17,18 @@ class AuthManager {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(SESSION_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(SESSION_FILE, sealSession(data, safeStorage), 'utf-8');
   }
 
   static getSession() {
     try {
       if (fs.existsSync(SESSION_FILE)) {
-        const content = fs.readFileSync(SESSION_FILE, 'utf-8');
-        return JSON.parse(content);
+        const { data, needsReseal } = openSession(fs.readFileSync(SESSION_FILE, 'utf-8'), safeStorage);
+        if (needsReseal) AuthManager.saveSession(data);
+        return data;
       }
     } catch (err) {
-      console.error('Erreur lecture session:', err);
+      console.error('Erreur lecture session:', err.message);
     }
     return null;
   }

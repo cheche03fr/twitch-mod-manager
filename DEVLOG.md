@@ -2,7 +2,7 @@
 
 Journal de développement de **Twitch Mod Manager**, l'application Windows qui réunit dans une seule fenêtre toutes les chaînes Twitch que l'on modère.
 
-> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 53 commits, 45 versions publiées (24 normales et 21 bêtas), chaque installeur signé `cheche03fr`.
+> **En chiffres** : 2 jours de développement (22 et 23 novembre 2026), 54 commits, 46 versions publiées (24 normales et 22 bêtas), chaque installeur signé `cheche03fr`.
 
 ---
 
@@ -19,7 +19,7 @@ Journal de développement de **Twitch Mod Manager**, l'application Windows qui r
 10. [v1.0.23 : la série passe en version normale](#10-v1023--la-série-passe-en-version-normale)
 11. [Les chuchotements](#11-les-chuchotements--v1024-beta1--beta2)
 12. [Deuxième contrôle de sécurité](#12-deuxième-contrôle-de-sécurité--v1024-beta3)
-13. [Les points de chaîne](#13-les-points-de-chaîne--v1024-beta4)
+13. [Les points de chaîne et le chat](#13-les-points-de-chaîne-et-le-chat--v1024-beta4--beta5)
 14. [Leçons techniques](#14-leçons-techniques)
 15. [Et après ?](#15-et-après-)
 
@@ -162,7 +162,7 @@ Un nouveau contrôle complet, après l'arrivée des chuchotements. **Aucune fail
 
 Aucun changement visible dans l'application.
 
-## 13. Les points de chaîne — v1.0.24-beta.4
+## 13. Les points de chaîne et le chat — v1.0.24-beta.4 → beta.5
 *23 novembre 2026*
 
 Un nouveau panneau **🎁 Points de chaîne** dans la grille, sur sa propre chaîne comme sur celles que l'on modère.
@@ -178,6 +178,15 @@ Un nouveau panneau **🎁 Points de chaîne** dans la grille, sur sa propre cha�
   - l'**historique en direct** des nouvelles demandes et de celles traitées depuis l'app.
 - **Le « direct »** est une relecture de la file toutes les 15 secondes, arrêtée à la fermeture de la chaîne. Les récompenses validées automatiquement par Twitch ne passent pas par la file et n'y apparaissent donc pas.
 - **Pour le capturer**, un nouveau script d'écoute du trafic de la Vue Twitch officielle ne note que le nom des requêtes, leur empreinte et la forme des réponses, textes tronqués, jamais le jeton.
+
+### v1.0.24-beta.5 — La liste des viewers du chat
+*26 novembre 2026*
+
+- **Le bug** : dans le chat intégré, le bouton « Utilisateurs dans le chat » ouvrait une liste vide.
+- **L'enquête** : Twitch répondait `failed integrity check` à la requête `ChatViewers`, alors que le jeton d'intégrité était bien obtenu. Retirer « Electron » de l'identité du navigateur ne suffisait pas. En revanche, la même liste s'affichait dans une vraie page twitch.tv : c'est le chat **intégré en cadre** (« embed ») que Twitch refuse.
+- **La correction** :
+  - le panneau Chat affiche désormais la page **popout** de twitch.tv dans une `webview`, avec la session de la Vue Twitch officielle. Tout y fonctionne comme sur le site.
+  - les pages Twitch de l'app annoncent un Chrome ordinaire, à sa vraie version, et non plus une identité figée en Chrome 130.
 
 ## 14. Leçons techniques
 

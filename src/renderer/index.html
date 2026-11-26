@@ -290,7 +290,9 @@
             </div>
           </div>
           <div class="widget-body chat-body">
-            <iframe id="twitch-chat-iframe" src="" scrolling="no"></iframe>
+            <!-- Chat « popout » de twitch.tv dans une webview (session de la Vue Twitch officielle) : intégré en iframe,
+                 Twitch refuse la liste des utilisateurs du chat (« failed integrity check ») -->
+            <webview id="twitch-chat-webview" src="about:blank" partition="persist:twitch_mod"></webview>
           </div>
         </div>
 
@@ -723,7 +725,6 @@
         src="" 
         allowpopups 
         partition="persist:twitch_mod"
-        useragent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
         style="width: 100%; height: 100%; display: flex; flex: 1 1 100%; border: none;">
       </webview>
     </div>

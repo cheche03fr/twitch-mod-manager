@@ -56,7 +56,7 @@ async function openModerationScreen(channel) {
   // Chargement des iframes avec parent=localhost
   const originHost = window.location.hostname || 'localhost';
   dom.twitchStreamIframe.src = `https://player.twitch.tv/?channel=${channel.login}&parent=${originHost}&autoplay=true&muted=false`;
-  dom.twitchChatIframe.src = `https://www.twitch.tv/embed/${channel.login}/chat?parent=${originHost}${state.settings.theme === 'dark' ? '&darkpopout' : ''}`;
+  dom.twitchChatWebview.setAttribute('src', `https://www.twitch.tv/popout/${encodeURIComponent(channel.login)}/chat?popout=${state.settings.theme === 'dark' ? '&darkpopout' : ''}`);
 
   // Réinitialiser les logs et formulaires
   dom.banUserInput.value = '';
@@ -93,7 +93,7 @@ function closeModerationScreen() {
   stopChannelPointsPanel();
 
   dom.twitchStreamIframe.src = '';
-  dom.twitchChatIframe.src = '';
+  dom.twitchChatWebview.setAttribute('src', 'about:blank');
   if (dom.twitchModWebview) {
     dom.twitchModWebview.setAttribute('src', 'about:blank');
   }

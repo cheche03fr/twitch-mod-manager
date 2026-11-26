@@ -96,7 +96,7 @@ const dom = {
 
   // Médias
   twitchStreamIframe: document.getElementById('twitch-stream-iframe'),
-  twitchChatIframe: document.getElementById('twitch-chat-iframe'),
+  twitchChatWebview: document.getElementById('twitch-chat-webview'),
   twitchModWebview: document.getElementById('twitch-mod-webview'),
 
   // Actions de Modérateur (Log)

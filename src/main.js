@@ -11,6 +11,10 @@ const updater = require('./updater');
 let mainWindow = null;
 let appUrl = null; // adresse du serveur local, null s'il n'a pas démarré
 
+// Les pages Twitch (chat, Vue Twitch officielle) voient un Chrome ordinaire, à sa vraie version : sans « Electron/… »
+// ni le nom de l'app, que le contrôle anti-robots de Twitch peut refuser
+app.userAgentFallback = app.userAgentFallback.replace(/ (Electron|twitch-mod-manager)\/\S+/g, '');
+
 const APP_WEB_PREFERENCES = {
   preload: path.join(__dirname, 'preload.js'),
   contextIsolation: true,

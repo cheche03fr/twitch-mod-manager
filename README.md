@@ -55,7 +55,7 @@ Les panneaux se réorganisent en les faisant glisser **par leur barre d'en-tête
 - Le déplacement fonctionne aussi au-dessus du stream et du chat intégrés ; **Échap** annule le déplacement.
 - Dans une fenêtre étroite (moins de 1100 px), les panneaux s'empilent sur toute la largeur.
 
-- **Stream et chat intégrés** côte à côte.
+- **Stream et chat intégrés** côte à côte. Le chat est la page « popout » de twitch.tv, dans la session de la **Vue Twitch officielle** : tout y fonctionne comme sur le site, y compris la liste **Utilisateurs dans le chat**. Elle était refusée par Twitch quand le chat était intégré comme un simple cadre. Pour écrire dans le chat, il faut être connecté dans la Vue Twitch officielle.
 - **Sanctions** : timeout ou ban d'un pseudo, avec motif. Le choix **Débannir** (en vert), sous les durées, s'applique comme elles : sélectionnez-le, puis **Appliquer** lève le ban ou l'exclusion du pseudo saisi.
 - **Purge du chat** et **mode bouclier**.
 - **Paramètres du chat** : mode lent, abonnés, émotes uniquement, followers.
